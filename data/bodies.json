@@ -130,6 +130,31 @@
       }
     ]
   },
+  "mars": {
+    "name": "Mars",
+    "radius_km": 3389.5,
+    "color": "#c1592e",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 227956000,
+      "sidereal_period_days": 686.980,
+      "eccentricity": 0.0935,
+      "inclination_deg": 1.850,
+      "ascending_node_deg": 49.578,
+      "arg_periapsis_deg": 286.502
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA Mars Fact Sheet (volumetric mean radius; J2000 mean orbital elements)"
+    },
+    "render_approximations": [
+      {
+        "what": "fixed mean elements; Mars's high eccentricity (0.0935) makes its aphelion/perihelion asymmetry visible in the rendered ellipse",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons ephemerides"
+      }
+    ]
+  },
   "_epoch": {
     "name": "Epoch",
     "provenance": {
