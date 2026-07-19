@@ -205,6 +205,31 @@
       }
     ]
   },
+  "uranus": {
+    "name": "Uranus",
+    "radius_km": 25362,
+    "color": "#9fd6d2",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 2867043000,
+      "sidereal_period_days": 30685.4,
+      "eccentricity": 0.0469,
+      "inclination_deg": 0.773,
+      "ascending_node_deg": 74.006,
+      "arg_periapsis_deg": 96.998
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA Uranus Fact Sheet (volumetric mean radius; J2000 mean orbital elements)"
+    },
+    "render_approximations": [
+      {
+        "what": "fixed mean elements; the 97.8° axial tilt is not rendered (no rotation shown at all yet)",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons; axial tilt + rotation when spin becomes visible (textures)"
+      }
+    ]
+  },
   "_epoch": {
     "name": "Epoch",
     "provenance": {
