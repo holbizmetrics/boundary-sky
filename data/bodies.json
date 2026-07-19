@@ -18,7 +18,10 @@
       "semi_major_axis_km": 384400,
       "sidereal_period_days": 27.321661,
       "eccentricity": 0.0549,
-      "inclination_deg": 5.145
+      "inclination_deg": 5.145,
+      "ascending_node_deg": 125.08,
+      "arg_periapsis_deg": 318.15,
+      "_angles_note": "Omega and omega are J2000 mean values and PRECESS (nodal ~18.6 yr retrograde, apsidal ~8.85 yr prograde) — held fixed here, see render_approximations"
     },
     "provenance": {
       "tier": "measured",
@@ -26,11 +29,16 @@
     },
     "render_approximations": [
       {
-        "what": "orbit drawn circular at semi-major axis, in the ecliptic plane",
+        "what": "Keplerian two-body ellipse with FIXED mean elements — no apsidal/nodal precession, no perturbations (evection, variation)",
         "tier": "derived-simplification",
-        "why": "v0 keeps the first canvas readable; eccentricity and inclination are real and already recorded above, just not yet rendered",
-        "correction_path": "render full Keplerian elements (rung 2), then swap to JPL Horizons ephemerides",
-        "expected_error": "up to ~21,000 km positional (eccentricity term) — labeled, not hidden"
+        "why": "rung 2 renders the true ellipse shape and tilt (e, i now in the geometry, not just the data); the remaining gap is that the real Moon is heavily perturbed by the Sun and its ellipse rotates",
+        "correction_path": "JPL Horizons ephemerides (rung 3+) — real positions, not elements",
+        "expected_error": "up to ~5,000 km positional vs true ephemeris (lunar perturbation terms) — labeled, not hidden",
+        "retired": {
+          "what": "orbit drawn circular at semi-major axis, in the ecliptic plane",
+          "retired_on": "2026-07-19",
+          "see": "provenance-log.jsonl"
+        }
       }
     ]
   },

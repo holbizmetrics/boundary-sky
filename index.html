@@ -106,16 +106,74 @@ const moonMesh = new THREE.Mesh(
 );
 scene.add(moonMesh);
 
-const orbitR = u(moon.orbit.semi_major_axis_km);
+// Rung 2: full Keplerian ellipse from the recorded elements (e, i, Ω, ω).
+// Residual now: FIXED mean elements — no precession, no perturbations (labeled).
+const DEG = Math.PI / 180;
+const el = {
+  a: moon.orbit.semi_major_axis_km,
+  e: moon.orbit.eccentricity,
+  i: moon.orbit.inclination_deg * DEG,
+  Om: moon.orbit.ascending_node_deg * DEG,
+  w: moon.orbit.arg_periapsis_deg * DEG,
+  T: moon.orbit.sidereal_period_days
+};
+
+// Kepler's equation M = E - e·sinE, Newton solve. Returns eccentric anomaly.
+function solveKepler(M, e) {
+  let E = M;
+  for (let k = 0; k < 20; k++) {
+    const d = (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+    E -= d;
+    if (Math.abs(d) < 1e-13) break;
+  }
+  return E;
+}
+
+// Elements + eccentric anomaly → ecliptic position in km {x,y,z} + distance r.
+function keplerPos(E) {
+  const { a, e, i, Om, w } = el;
+  const r = a * (1 - e * Math.cos(E));
+  const nu = 2 * Math.atan2(Math.sqrt(1 + e) * Math.sin(E / 2),
+                            Math.sqrt(1 - e) * Math.cos(E / 2));
+  const wv = w + nu;
+  const X = r * (Math.cos(Om) * Math.cos(wv) - Math.sin(Om) * Math.sin(wv) * Math.cos(i));
+  const Y = r * (Math.sin(Om) * Math.cos(wv) + Math.cos(Om) * Math.sin(wv) * Math.cos(i));
+  const Z = r * Math.sin(wv) * Math.sin(i);
+  // ecliptic (X,Y,Z) → scene (x, y=north, z): scene x-z is the ecliptic plane.
+  return { x: X, y: Z, z: Y, r };
+}
+
 const orbitPts = [];
-for (let i = 0; i <= 256; i++) {
-  const a = (i / 256) * Math.PI * 2;
-  orbitPts.push(new THREE.Vector3(Math.cos(a) * orbitR, 0, Math.sin(a) * orbitR));
+for (let k = 0; k <= 512; k++) {
+  const p = keplerPos((k / 512) * Math.PI * 2);
+  orbitPts.push(new THREE.Vector3(u(p.x), u(p.y), u(p.z)));
 }
 scene.add(new THREE.Line(
   new THREE.BufferGeometry().setFromPoints(orbitPts),
   new THREE.LineBasicMaterial({ color: 0x3a5a7a, transparent: true, opacity: 0.6 })
 ));
+
+// ---- decidable self-check (rung 2) --------------------------------------
+// (1) perigee/apogee from the rendered path must match a(1∓e) to <1 km;
+// (2) Kepler residual |E - e·sinE - M| < 1e-9 rad across the orbit.
+const selfCheck = (() => {
+  const { a, e } = el;
+  let rMin = Infinity, rMax = 0, maxResid = 0;
+  for (let k = 0; k < 4096; k++) {
+    const M = (k / 4096) * Math.PI * 2;
+    const E = solveKepler(M, e);
+    maxResid = Math.max(maxResid, Math.abs(E - e * Math.sin(E) - M));
+    const r = keplerPos(E).r;
+    rMin = Math.min(rMin, r); rMax = Math.max(rMax, r);
+  }
+  const perErr = Math.abs(rMin - a * (1 - e)), apoErr = Math.abs(rMax - a * (1 + e));
+  const pass = perErr < 1 && apoErr < 1 && maxResid < 1e-9;
+  const msg = `self-check ${pass ? 'PASS' : 'FAIL'} · perigee ${rMin.toFixed(1)} km ` +
+    `(Δ${perErr.toExponential(1)}) · apogee ${rMax.toFixed(1)} km (Δ${apoErr.toExponential(1)}) ` +
+    `· max Kepler resid ${maxResid.toExponential(1)} rad`;
+  console.log('[boundary-sky rung 2]', msg);
+  return { pass, msg };
+})();
 
 // ---- starfield (tier: decorative — random, NOT real star positions) -----
 {
@@ -157,15 +215,19 @@ let simDays = 0;
 renderer.setAnimationLoop(() => {
   simDays += clock.getDelta() * SIM_DAYS_PER_SECOND;
 
-  // Moon: uniform circular motion at the sidereal period (v0 approximation).
-  const a = (simDays / moon.orbit.sidereal_period_days) * Math.PI * 2;
-  moonMesh.position.set(Math.cos(a) * orbitR, 0, Math.sin(a) * orbitR);
+  // Moon: Keplerian motion (rung 2) — mean anomaly advances uniformly,
+  // position via Kepler's equation. Fast near perigee, slow near apogee.
+  const M = (simDays / el.T) * Math.PI * 2;
+  const p = keplerPos(solveKepler(M % (Math.PI * 2), el.e));
+  moonMesh.position.set(u(p.x), u(p.y), u(p.z));
 
   // Earth spin at the measured sidereal rotation period.
   earthMesh.rotation.y = (simDays * 24 / earth.rotation_period_hours) * Math.PI * 2;
 
   clockEl.textContent =
-    `sim day ${simDays.toFixed(1)} · lunar orbit ${(simDays / moon.orbit.sidereal_period_days).toFixed(2)} · 1 s = 1 day`;
+    `sim day ${simDays.toFixed(1)} · lunar orbit ${(simDays / el.T).toFixed(2)} · ` +
+    `Earth–Moon ${Math.round(p.r).toLocaleString('en')} km · 1 s = 1 day · ` +
+    selfCheck.msg;
 
   controls.update();
   renderer.render(scene, camera);
