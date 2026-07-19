@@ -23,6 +23,7 @@
     "rotation_period_hours": 23.9345,
     "color": "#2e6fbb",
     "orbit": {
+      "parent": "sun",
       "semi_major_axis_km": 149598023,
       "sidereal_period_days": 365.256363,
       "eccentricity": 0.0167086,
@@ -50,6 +51,7 @@
     "radius_km": 1737.4,
     "color": "#b8b4ab",
     "orbit": {
+      "parent": "earth",
       "semi_major_axis_km": 384400,
       "sidereal_period_days": 27.321661,
       "eccentricity": 0.0549,
@@ -77,11 +79,37 @@
       }
     ]
   },
+  "mercury": {
+    "name": "Mercury",
+    "radius_km": 2439.7,
+    "color": "#8a8680",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 57909050,
+      "sidereal_period_days": 87.969,
+      "eccentricity": 0.2056,
+      "inclination_deg": 7.005,
+      "ascending_node_deg": 48.331,
+      "arg_periapsis_deg": 29.124
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA Mercury Fact Sheet (volumetric mean radius; J2000 mean orbital elements)"
+    },
+    "render_approximations": [
+      {
+        "what": "fixed mean elements — notably omits Mercury's famous perihelion precession (~5,600 arcsec/century, incl. the 43\"/century GR term)",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons ephemerides",
+        "expected_error": "grows secularly; fine for a labeled orrery, useless for prediction — that asymmetry is the label's whole job"
+      }
+    ]
+  },
   "_epoch": {
     "name": "Epoch",
     "provenance": {
       "tier": "derived-simplification",
-      "note": "sim day 0 puts Earth at perihelion AND the Moon at perigee simultaneously — an arbitrary alignment, not a real calendar date. Correction path: epoch-referenced mean anomalies, then Horizons."
+      "note": "sim day 0 puts EVERY body at periapsis simultaneously — an alignment that never happens on any real calendar date. Correction path: epoch-referenced mean anomalies, then Horizons."
     }
   },
   "_starfield": {
