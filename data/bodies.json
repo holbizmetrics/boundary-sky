@@ -256,6 +256,33 @@
       }
     ]
   },
+  "planet_nine": {
+    "name": "Planet Nine",
+    "radius_km": 16600,
+    "color": "#8f6fc9",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 56848000000,
+      "sidereal_period_days": 2705700,
+      "eccentricity": 0.21,
+      "inclination_deg": 16,
+      "ascending_node_deg": 97,
+      "arg_periapsis_deg": 138
+    },
+    "provenance": {
+      "tier": "conjectured",
+      "source": "Batygin & Brown 2021, 'The Orbit of Planet Nine' (AJ) — a≈380 AU (+140/−80), e≈0.21, i≈16°, m≈6.2 M⊕; inferred from the clustering of distant Kuiper-belt object orbits",
+      "note": "EVERY number here is a posterior estimate, not a measurement — including the radius (derived from ~6 M⊕ assuming ice-giant composition; nobody has ever seen this object). The orbit shown is the distribution's peak; the real uncertainty is enormous.",
+      "falsifier": "Vera Rubin Observatory (LSST) surveys the predicted swath to sufficient depth without detection AND the KBO orbital clustering is shown to be survey selection bias (as some analyses already argue) → the conjecture dies and this entry is demoted to a retired record in the provenance log. Conversely: a detection promotes it to measured. Either outcome is the system working."
+    },
+    "render_approximations": [
+      {
+        "what": "single best-fit orbit drawn for what is really a broad posterior distribution; rendered ghosted + dashed so conjecture can never be mistaken for measurement",
+        "tier": "derived-simplification",
+        "correction_path": "on detection: real elements; on falsification: removal-by-append"
+      }
+    ]
+  },
   "_epoch": {
     "name": "Epoch",
     "provenance": {

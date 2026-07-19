@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>boundary-sky — the Solar System, one planet at a time (rung 4)</title>
+<title>boundary-sky — the Solar System + one conjecture (rung 5)</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden;
                font-family: system-ui, sans-serif; }
@@ -21,6 +21,7 @@
   .tier.measured   { background: #14432a; color: #7fe0a7; }
   .tier.derived-simplification { background: #4a3a12; color: #f0cf7a; }
   .tier.decorative { background: #3a2a4a; color: #cfa7e8; }
+  .tier.conjectured { background: #4a1a2a; color: #f0a7c0; }
   #hud label { display: block; margin-top: 8px; cursor: pointer; color: #e8eef6; }
   #hud .note { color: #8fa1b8; font-size: 11.5px; }
   #hud details { margin-top: 6px; }
@@ -34,7 +35,7 @@
 </head>
 <body>
 <div id="hud">
-  <h1>boundary-sky <span class="note">rung 4 — one planet at a time</span></h1>
+  <h1>boundary-sky <span class="note">rung 5 — the boundary itself</span></h1>
   <label>camera rides with<select id="focus-select"></select></label>
   <label>
     <input type="checkbox" id="scale-toggle">
@@ -121,7 +122,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.5, 5e7);
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.5, 6e8);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
@@ -130,10 +131,14 @@ const sys = {}; // key → { data, mesh, el?, line? }
 for (const [key, b] of Object.entries(bodies)) {
   if (key.startsWith('_')) continue;
   const isSun = !b.orbit;
+  const conjectured = b.provenance.tier === 'conjectured';
+  // Conjecture must LOOK different from measurement even with the HUD closed:
+  // ghosted body, dashed orbit. Rendering IS a provenance claim.
   const mesh = new THREE.Mesh(
     new THREE.SphereGeometry(u(b.radius_km), 48, 32),
     isSun ? new THREE.MeshBasicMaterial({ color: b.color })          // it IS the light
-          : new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.9 })
+          : new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.9,
+              transparent: conjectured, opacity: conjectured ? 0.45 : 1 })
   );
   scene.add(mesh);
   const entry = { data: b, mesh };
@@ -144,9 +149,17 @@ for (const [key, b] of Object.entries(bodies)) {
       const p = keplerPos(entry.el, (k / 512) * Math.PI * 2);
       pts.push(new THREE.Vector3(u(p.x), u(p.y), u(p.z)));
     }
-    entry.line = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicMaterial({ color: 0x3a5a7a, transparent: true, opacity: 0.55 }));
+    const geom = new THREE.BufferGeometry().setFromPoints(pts);
+    if (conjectured) {
+      const dash = u(entry.el.a) * 0.015;
+      entry.line = new THREE.Line(geom, new THREE.LineDashedMaterial({
+        color: 0x8f6fc9, dashSize: dash, gapSize: dash * 0.7,
+        transparent: true, opacity: 0.7 }));
+      entry.line.computeLineDistances();
+    } else {
+      entry.line = new THREE.Line(geom,
+        new THREE.LineBasicMaterial({ color: 0x3a5a7a, transparent: true, opacity: 0.55 }));
+    }
     scene.add(entry.line);
   }
   sys[key] = entry;
@@ -160,7 +173,7 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.06));
 {
   const n = 1500, pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
-    const v = new THREE.Vector3().randomDirection().multiplyScalar(2.5e7);
+    const v = new THREE.Vector3().randomDirection().multiplyScalar(2.5e8);
     pos.set([v.x, v.y, v.z], i * 3);
   }
   const g = new THREE.BufferGeometry();
@@ -175,6 +188,8 @@ document.getElementById('bodies-panel').innerHTML =
     let s = `<b>${b.name}</b> ${tierBadge(b.provenance.tier)}`;
     if (b.provenance.source) s += `<div class="note">${b.provenance.source}</div>`;
     if (b.provenance.note) s += `<div class="note">${b.provenance.note}</div>`;
+    if (b.provenance.falsifier)
+      s += `<div class="note"><b style="color:#f0a7c0">falsifier:</b> ${b.provenance.falsifier}</div>`;
     for (const ap of b.render_approximations ?? [])
       s += `<div class="note">↳ ${ap.what} ${tierBadge(ap.tier)}<br>` +
            `&nbsp;&nbsp;fix: ${ap.correction_path}</div>`;
@@ -248,10 +263,12 @@ let firstFrame = true;
 const prevFocus = new THREE.Vector3();
 function focusDistance(key) {
   const s = sys[key];
-  if (!s.el) { // Sun: step back far enough to hold the outermost orbit
+  if (!s.el) { // Sun: frame the outermost MEASURED orbit — a conjecture may not
+               // set the scale of the confirmed sky; zoom out to find the ghost.
     let maxApo = 0;
     for (const t of Object.values(sys))
-      if (t.el && t.el.parent === key) maxApo = Math.max(maxApo, t.el.a * (1 + t.el.e));
+      if (t.el && t.el.parent === key && t.data.provenance.tier === 'measured')
+        maxApo = Math.max(maxApo, t.el.a * (1 + t.el.e));
     return u(maxApo) * 1.35 || 3000;
   }
   return Math.max(300, u(s.data.radius_km) * 80);
