@@ -36,7 +36,10 @@
 <body>
 <div id="hud">
   <h1>boundary-sky <span class="note">rung 5 — the boundary itself</span></h1>
-  <label>camera rides with<select id="focus-select"></select></label>
+  <label>camera rides with<select id="focus-select"></select>
+    <button id="reset-view" style="margin-left:6px;background:#16202e;color:#e8eef6;
+      border:1px solid #2a3a52;border-radius:4px;padding:2px 8px;cursor:pointer">reset view</button>
+  </label>
   <label>
     <input type="checkbox" id="scale-toggle">
     radii ×20 <span class="tier derived-simplification">labeled lie</span>
@@ -276,6 +279,9 @@ function focusDistance(key) {
 focusSel.addEventListener('change', () => {
   focusKey = focusSel.value;
   firstFrame = true; // re-seat the camera next frame
+});
+document.getElementById('reset-view').addEventListener('click', () => {
+  firstFrame = true; // same re-seat, current focus — back to default framing
 });
 
 // ---- animate ------------------------------------------------------------
