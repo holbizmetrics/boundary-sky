@@ -256,6 +256,33 @@
       }
     ]
   },
+  "pluto": {
+    "name": "Pluto",
+    "radius_km": 1188.3,
+    "color": "#c9b8a8",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 5906380000,
+      "sidereal_period_days": 90560,
+      "eccentricity": 0.2488,
+      "inclination_deg": 17.142,
+      "ascending_node_deg": 110.303,
+      "arg_periapsis_deg": 113.763
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA Pluto Fact Sheet / Standish J2000 mean elements; radius from New Horizons (2015)",
+      "note": "a DWARF planet — reclassified by IAU vote in 2006; the reclassification changed the label, not the orbit. Discovered 1930: with a 248-year period, humanity has watched barely a third of one Pluto orbit — its mean elements rest on the shortest observed arc of any body here except the conjecture."
+    },
+    "render_approximations": [
+      {
+        "what": "fixed mean elements; omits the 2:3 Neptune resonance that actually PROTECTS Pluto (mean elements make the orbits look like they could collide near the node crossing — the resonance phase-locks them so they never do)",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons ephemerides, where the resonance is implicit in the positions",
+        "expected_error": "the crossing-orbits impression is the misleading part, not the km error — a label about geometry creating a false STORY, not just false positions"
+      }
+    ]
+  },
   "planet_nine": {
     "name": "Planet Nine",
     "radius_km": 16600,
