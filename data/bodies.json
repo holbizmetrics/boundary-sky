@@ -256,6 +256,32 @@
       }
     ]
   },
+  "ceres": {
+    "name": "Ceres",
+    "radius_km": 469.7,
+    "color": "#a8a29a",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 413757000,
+      "sidereal_period_days": 1683.15,
+      "eccentricity": 0.0785,
+      "inclination_deg": 10.587,
+      "ascending_node_deg": 80.267,
+      "arg_periapsis_deg": 73.597
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "JPL Small-Body Database; radius from Dawn orbiter (2015–2018) — spacecraft-grade",
+      "note": "first asteroid ever discovered (Piazzi, 1801-01-01), then LOST behind the Sun and recovered because Gauss invented modern orbit determination to find it again — the founding legend of fitting orbits to short arcs. Promoted to dwarf planet in the same IAU 2006 resolution that demoted Pluto: one vote, one label moved down, one up."
+    },
+    "render_approximations": [
+      {
+        "what": "fixed mean elements (osculating elements at a recent epoch; main-belt perturbations by Jupiter ignored)",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons ephemerides"
+      }
+    ]
+  },
   "pluto": {
     "name": "Pluto",
     "radius_km": 1188.3,
