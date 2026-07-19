@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>boundary-sky — Earth &amp; Moon (v0)</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden;
+               font-family: system-ui, sans-serif; }
+  #hud {
+    position: fixed; top: 10px; left: 10px; max-width: 340px;
+    background: rgba(10, 14, 22, 0.82); color: #cfd8e3;
+    border: 1px solid #2a3a52; border-radius: 8px;
+    padding: 10px 12px; font-size: 12.5px; line-height: 1.45;
+    backdrop-filter: blur(4px);
+  }
+  #hud h1 { font-size: 14px; margin: 0 0 6px; color: #e8eef6; font-weight: 600; }
+  .tier { display: inline-block; padding: 0 6px; border-radius: 9px;
+          font-size: 10.5px; margin-left: 4px; vertical-align: 1px; }
+  .tier.measured   { background: #14432a; color: #7fe0a7; }
+  .tier.derived-simplification { background: #4a3a12; color: #f0cf7a; }
+  .tier.decorative { background: #3a2a4a; color: #cfa7e8; }
+  #hud label { display: block; margin-top: 8px; cursor: pointer; color: #e8eef6; }
+  #hud .note { color: #8fa1b8; font-size: 11.5px; }
+  #hud details { margin-top: 6px; }
+  #hud summary { cursor: pointer; color: #9fc1e8; }
+  #clock { position: fixed; bottom: 10px; left: 10px; color: #8fa1b8;
+           font-size: 12px; background: rgba(10,14,22,0.7); padding: 4px 8px;
+           border-radius: 6px; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <h1>boundary-sky · Earth &amp; Moon <span class="note">v0</span></h1>
+  <div id="bodies-panel">loading data/bodies.json…</div>
+  <label>
+    <input type="checkbox" id="scale-toggle">
+    radii ×20 <span class="tier derived-simplification">labeled lie</span>
+    <div class="note">True scale is the default — the discomfort is the point.
+    This toggle inflates radii only (distance stays honest) and says so.</div>
+  </label>
+  <details>
+    <summary>what the labels mean</summary>
+    <div class="note">
+      <span class="tier measured">measured</span> published data, source cited ·
+      <span class="tier derived-simplification">derived-simplification</span>
+      a knowing approximation in the rendering, correction path named ·
+      <span class="tier decorative">decorative</span> scenery, not sky.<br>
+      Corrections are appended to <code>provenance-log.jsonl</code>, never erased.
+    </div>
+  </details>
+</div>
+<div id="clock"></div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ---- units & time -------------------------------------------------------
+// 1 scene unit = 1000 km. All geometry derives from data/bodies.json —
+// numbers live in data with their provenance, never hardcoded here.
+const KM_PER_UNIT = 1000;
+const u = km => km / KM_PER_UNIT;
+// Time: 1 real second = 1 simulated day (fast enough to SEE the month turn).
+const SIM_DAYS_PER_SECOND = 1;
+
+const bodies = await (await fetch('data/bodies.json')).json();
+const earth = bodies.earth, moon = bodies.moon;
+
+// ---- renderer / scene / camera -----------------------------------------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); // phone-friendly
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 20000);
+camera.position.set(0, 140, 520); // both bodies in frame at true scale
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// ---- light (tier: derived-simplification, see bodies.json _sunlight) ----
+scene.add(new THREE.AmbientLight(0xffffff, 0.12));
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.position.set(1, 0.2, 0.3);
+scene.add(sun);
+
+// ---- Earth (tier: measured; sphere = knowing simplification) ------------
+const earthMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(u(earth.radius_km), 48, 32),
+  new THREE.MeshStandardMaterial({ color: earth.color, roughness: 0.9 })
+);
+scene.add(earthMesh);
+
+// ---- Moon + circular v0 orbit (tier: derived-simplification) ------------
+const moonMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(u(moon.radius_km), 32, 24),
+  new THREE.MeshStandardMaterial({ color: moon.color, roughness: 1.0 })
+);
+scene.add(moonMesh);
+
+const orbitR = u(moon.orbit.semi_major_axis_km);
+const orbitPts = [];
+for (let i = 0; i <= 256; i++) {
+  const a = (i / 256) * Math.PI * 2;
+  orbitPts.push(new THREE.Vector3(Math.cos(a) * orbitR, 0, Math.sin(a) * orbitR));
+}
+scene.add(new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints(orbitPts),
+  new THREE.LineBasicMaterial({ color: 0x3a5a7a, transparent: true, opacity: 0.6 })
+));
+
+// ---- starfield (tier: decorative — random, NOT real star positions) -----
+{
+  const n = 1500, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const v = new THREE.Vector3().randomDirection().multiplyScalar(9000);
+    pos.set([v.x, v.y, v.z], i * 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x9db4cc, size: 2, sizeAttenuation: false })));
+}
+
+// ---- HUD: provenance panel, generated FROM the data ---------------------
+function tierBadge(t) { return `<span class="tier ${t}">${t}</span>`; }
+document.getElementById('bodies-panel').innerHTML =
+  Object.values(bodies).map(b => {
+    let s = `<b>${b.name}</b> ${tierBadge(b.provenance.tier)}`;
+    if (b.provenance.source) s += `<div class="note">${b.provenance.source}</div>`;
+    if (b.provenance.note) s += `<div class="note">${b.provenance.note}</div>`;
+    for (const ap of b.render_approximations ?? [])
+      s += `<div class="note">↳ ${ap.what} ${tierBadge(ap.tier)}<br>` +
+           `&nbsp;&nbsp;fix: ${ap.correction_path}</div>`;
+    return `<div style="margin-bottom:6px">${s}</div>`;
+  }).join('');
+
+// ---- scale toggle: inflates radii only; the lie is labeled --------------
+document.getElementById('scale-toggle').addEventListener('change', e => {
+  const k = e.target.checked ? 20 : 1;
+  earthMesh.scale.setScalar(k);
+  moonMesh.scale.setScalar(k);
+});
+
+// ---- animate ------------------------------------------------------------
+const clockEl = document.getElementById('clock');
+const clock = new THREE.Clock();
+let simDays = 0;
+
+renderer.setAnimationLoop(() => {
+  simDays += clock.getDelta() * SIM_DAYS_PER_SECOND;
+
+  // Moon: uniform circular motion at the sidereal period (v0 approximation).
+  const a = (simDays / moon.orbit.sidereal_period_days) * Math.PI * 2;
+  moonMesh.position.set(Math.cos(a) * orbitR, 0, Math.sin(a) * orbitR);
+
+  // Earth spin at the measured sidereal rotation period.
+  earthMesh.rotation.y = (simDays * 24 / earth.rotation_period_hours) * Math.PI * 2;
+
+  clockEl.textContent =
+    `sim day ${simDays.toFixed(1)} · lunar orbit ${(simDays / moon.orbit.sidereal_period_days).toFixed(2)} · 1 s = 1 day`;
+
+  controls.update();
+  renderer.render(scene, camera);
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>

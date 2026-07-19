@@ -1,0 +1,51 @@
+{
+  "earth": {
+    "name": "Earth",
+    "radius_km": 6371.0,
+    "rotation_period_hours": 23.9345,
+    "color": "#2e6fbb",
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA Earth Fact Sheet (mean volumetric radius)",
+      "note": "radius is the mean; Earth is an oblate spheroid (equatorial 6378.1 km, polar 6356.8 km) — sphere rendering is a knowing simplification"
+    }
+  },
+  "moon": {
+    "name": "Moon",
+    "radius_km": 1737.4,
+    "color": "#b8b4ab",
+    "orbit": {
+      "semi_major_axis_km": 384400,
+      "sidereal_period_days": 27.321661,
+      "eccentricity": 0.0549,
+      "inclination_deg": 5.145
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA Moon Fact Sheet"
+    },
+    "render_approximations": [
+      {
+        "what": "orbit drawn circular at semi-major axis, in the ecliptic plane",
+        "tier": "derived-simplification",
+        "why": "v0 keeps the first canvas readable; eccentricity and inclination are real and already recorded above, just not yet rendered",
+        "correction_path": "render full Keplerian elements (rung 2), then swap to JPL Horizons ephemerides",
+        "expected_error": "up to ~21,000 km positional (eccentricity term) — labeled, not hidden"
+      }
+    ]
+  },
+  "_starfield": {
+    "name": "Starfield",
+    "provenance": {
+      "tier": "decorative",
+      "note": "random points for depth perception — NOT real star positions. Correction path: Hipparcos/Gaia bright-star catalog."
+    }
+  },
+  "_sunlight": {
+    "name": "Sunlight",
+    "provenance": {
+      "tier": "derived-simplification",
+      "note": "fixed directional light standing in for the Sun; no Sun object exists yet (rung 3)"
+    }
+  }
+}

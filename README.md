@@ -1,0 +1,67 @@
+# boundary-sky
+
+> A solar-system simulation that **renders the boundary of knowledge and labels it.**
+> NASA's Eyes shows the confirmed. This shows confirmed, derived, and conjectured —
+> each object and each behavior carrying its provenance, like a falsifier register
+> for the sky. Consistency over quantity (the Frontier: Elite II lesson: a small,
+> trustworthy sky beats a big vague one).
+
+Born 2026-07-19, Holger + Eve, on a phone. A play-and-learn project — built to be
+read, poked, and corrected.
+
+## The three tiers
+
+Every rendered thing declares one of:
+
+| Tier | Meaning |
+|---|---|
+| `measured` | Observed/published data (ephemerides, fact sheets). Source cited. |
+| `derived` | Follows from current physics/math applied to measured data. Nobody voted; the equations did. |
+| `conjectured` | Consistent with everything known, unconfirmed. **Ships with its falsifier**: the observation that would kill it. |
+
+Plus one honesty tier for the renderer itself:
+
+| Tier | Meaning |
+|---|---|
+| `derived-simplification` | A knowing approximation in the *rendering* (e.g. v0's circular Moon orbit). Labeled, with the correction path named. |
+| `decorative` | Not data at all (e.g. the random starfield). Labeled so nobody mistakes scenery for sky. |
+
+## The correction rule (the PCLA move)
+
+**A correction is the system working, not failing.** Labels are never erased —
+they are appended. Demotions, promotions, and falsifications go to
+`provenance-log.jsonl` (append-only, one JSON record per line). The record of
+being wrong is the credibility.
+
+## Run it
+
+```
+python -m http.server 8138
+# open http://localhost:8138/
+```
+
+One codebase, four targets: Three.js on WebGL2 — Android phone, Android tablet,
+Linux, Windows. No installs. (WebGPU deliberately avoided: not yet everywhere.)
+
+## What v0 is
+
+Earth and Moon. **True scale by default** — the Moon is far, and everyone's
+mental image is wrong by about a factor of ten; this is the uncomfortable magic.
+A labeled toggle offers `radii ×20` visibility mode — the toggle itself is the
+first boundary label: even the rendering's lies are declared.
+
+Known residuals of v0, named on purpose (see `data/bodies.json` →
+`render_approximations`):
+- Moon orbit drawn circular at the semi-major axis (real: e≈0.0549, i≈5.145°).
+  Correction path: full Keplerian elements, then real ephemerides (JPL Horizons).
+- Sunlight is a fixed directional light; there is no Sun object yet.
+- Starfield is random points (`decorative`).
+
+## Roadmap rungs (base case before galaxy)
+
+1. **Earth–Moon** (v0, here) — true scale, circular orbit, labels on.
+2. Keplerian orbit (eccentricity + inclination) — retire the first residual.
+3. The Sun, for real — light *from* it, Earth orbiting it.
+4. Planets, one at a time, each arriving consistent.
+5. The first `conjectured` object — with its falsifier. That's when this stops
+   being an orrery and becomes the thing it was born to be.
