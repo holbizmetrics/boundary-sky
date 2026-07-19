@@ -105,6 +105,31 @@
       }
     ]
   },
+  "venus": {
+    "name": "Venus",
+    "radius_km": 6051.8,
+    "color": "#d9c391",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 108208000,
+      "sidereal_period_days": 224.701,
+      "eccentricity": 0.0068,
+      "inclination_deg": 3.395,
+      "ascending_node_deg": 76.680,
+      "arg_periapsis_deg": 54.884
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA Venus Fact Sheet (volumetric mean radius; J2000 mean orbital elements)"
+    },
+    "render_approximations": [
+      {
+        "what": "fixed mean elements; the nearly-circular orbit (e=0.0068) makes the residual smallest of any planet",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons ephemerides"
+      }
+    ]
+  },
   "_epoch": {
     "name": "Epoch",
     "provenance": {
