@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>boundary-sky — Earth &amp; Moon (v0)</title>
+<title>boundary-sky — Sun · Earth · Moon (rung 3)</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden;
                font-family: system-ui, sans-serif; }
@@ -24,20 +24,24 @@
   #hud .note { color: #8fa1b8; font-size: 11.5px; }
   #hud details { margin-top: 6px; }
   #hud summary { cursor: pointer; color: #9fc1e8; }
-  #clock { position: fixed; bottom: 10px; left: 10px; color: #8fa1b8;
+  #clock { position: fixed; bottom: 10px; left: 10px; right: 10px; color: #8fa1b8;
            font-size: 12px; background: rgba(10,14,22,0.7); padding: 4px 8px;
            border-radius: 6px; }
 </style>
 </head>
 <body>
 <div id="hud">
-  <h1>boundary-sky · Earth &amp; Moon <span class="note">v0</span></h1>
+  <h1>boundary-sky · Sun · Earth · Moon <span class="note">rung 3</span></h1>
   <div id="bodies-panel">loading data/bodies.json…</div>
   <label>
     <input type="checkbox" id="scale-toggle">
     radii ×20 <span class="tier derived-simplification">labeled lie</span>
     <div class="note">True scale is the default — the discomfort is the point.
-    This toggle inflates radii only (distance stays honest) and says so.</div>
+    This toggle inflates radii only (distances stay honest) and says so.</div>
+  </label>
+  <label>
+    <input type="checkbox" id="focus-toggle">
+    focus the Sun <span class="note">(default: camera rides with Earth)</span>
   </label>
   <details>
     <summary>what the labels mean</summary>
@@ -67,57 +71,21 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // numbers live in data with their provenance, never hardcoded here.
 const KM_PER_UNIT = 1000;
 const u = km => km / KM_PER_UNIT;
-// Time: 1 real second = 1 simulated day (fast enough to SEE the month turn).
+// Time: 1 real second = 1 simulated day (the month turns in ~27 s; the year in ~365 s).
 const SIM_DAYS_PER_SECOND = 1;
+const DEG = Math.PI / 180;
 
 const bodies = await (await fetch('data/bodies.json')).json();
-const earth = bodies.earth, moon = bodies.moon;
+const sunData = bodies.sun, earth = bodies.earth, moon = bodies.moon;
 
-// ---- renderer / scene / camera -----------------------------------------
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); // phone-friendly
-document.body.appendChild(renderer.domElement);
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 20000);
-camera.position.set(0, 140, 520); // both bodies in frame at true scale
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-
-// ---- light (tier: derived-simplification, see bodies.json _sunlight) ----
-scene.add(new THREE.AmbientLight(0xffffff, 0.12));
-const sun = new THREE.DirectionalLight(0xffffff, 2.2);
-sun.position.set(1, 0.2, 0.3);
-scene.add(sun);
-
-// ---- Earth (tier: measured; sphere = knowing simplification) ------------
-const earthMesh = new THREE.Mesh(
-  new THREE.SphereGeometry(u(earth.radius_km), 48, 32),
-  new THREE.MeshStandardMaterial({ color: earth.color, roughness: 0.9 })
-);
-scene.add(earthMesh);
-
-// ---- Moon + circular v0 orbit (tier: derived-simplification) ------------
-const moonMesh = new THREE.Mesh(
-  new THREE.SphereGeometry(u(moon.radius_km), 32, 24),
-  new THREE.MeshStandardMaterial({ color: moon.color, roughness: 1.0 })
-);
-scene.add(moonMesh);
-
-// Rung 2: full Keplerian ellipse from the recorded elements (e, i, Ω, ω).
-// Residual now: FIXED mean elements — no precession, no perturbations (labeled).
-const DEG = Math.PI / 180;
-const el = {
-  a: moon.orbit.semi_major_axis_km,
-  e: moon.orbit.eccentricity,
-  i: moon.orbit.inclination_deg * DEG,
-  Om: moon.orbit.ascending_node_deg * DEG,
-  w: moon.orbit.arg_periapsis_deg * DEG,
-  T: moon.orbit.sidereal_period_days
-};
-
+// ---- Kepler machinery (rung 2, generalized for any orbit block) ---------
+function makeOrbit(o) {
+  return {
+    a: o.semi_major_axis_km, e: o.eccentricity,
+    i: o.inclination_deg * DEG, Om: o.ascending_node_deg * DEG,
+    w: o.arg_periapsis_deg * DEG, T: o.sidereal_period_days
+  };
+}
 // Kepler's equation M = E - e·sinE, Newton solve. Returns eccentric anomaly.
 function solveKepler(M, e) {
   let E = M;
@@ -128,9 +96,8 @@ function solveKepler(M, e) {
   }
   return E;
 }
-
 // Elements + eccentric anomaly → ecliptic position in km {x,y,z} + distance r.
-function keplerPos(E) {
+function keplerPos(el, E) {
   const { a, e, i, Om, w } = el;
   const r = a * (1 - e * Math.cos(E));
   const nu = 2 * Math.atan2(Math.sqrt(1 + e) * Math.sin(E / 2),
@@ -142,44 +109,69 @@ function keplerPos(E) {
   // ecliptic (X,Y,Z) → scene (x, y=north, z): scene x-z is the ecliptic plane.
   return { x: X, y: Z, z: Y, r };
 }
-
-const orbitPts = [];
-for (let k = 0; k <= 512; k++) {
-  const p = keplerPos((k / 512) * Math.PI * 2);
-  orbitPts.push(new THREE.Vector3(u(p.x), u(p.y), u(p.z)));
+// Position at sim time (sim day 0 = periapsis; the "_epoch" label owns that lie).
+function orbitAt(el, simDays) {
+  const M = ((simDays / el.T) % 1) * Math.PI * 2;
+  return keplerPos(el, solveKepler(M, el.e));
 }
-scene.add(new THREE.Line(
-  new THREE.BufferGeometry().setFromPoints(orbitPts),
-  new THREE.LineBasicMaterial({ color: 0x3a5a7a, transparent: true, opacity: 0.6 })
-));
+const earthEl = makeOrbit(earth.orbit);
+const moonEl = makeOrbit(moon.orbit);
 
-// ---- decidable self-check (rung 2) --------------------------------------
-// (1) perigee/apogee from the rendered path must match a(1∓e) to <1 km;
-// (2) Kepler residual |E - e·sinE - M| < 1e-9 rad across the orbit.
-const selfCheck = (() => {
-  const { a, e } = el;
-  let rMin = Infinity, rMax = 0, maxResid = 0;
-  for (let k = 0; k < 4096; k++) {
-    const M = (k / 4096) * Math.PI * 2;
-    const E = solveKepler(M, e);
-    maxResid = Math.max(maxResid, Math.abs(E - e * Math.sin(E) - M));
-    const r = keplerPos(E).r;
-    rMin = Math.min(rMin, r); rMax = Math.max(rMax, r);
+// ---- renderer / scene / camera -----------------------------------------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); // phone-friendly
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.5, 2e6);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// ---- Sun: the light comes FROM it now (rung 3) --------------------------
+// The v0 fixed directional "sunlight" is retired — see provenance-log.jsonl.
+const sunMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(u(sunData.radius_km), 48, 32),
+  new THREE.MeshBasicMaterial({ color: sunData.color }) // emissive: it IS the light
+);
+scene.add(sunMesh); // Sun sits at the origin; everything orbits it
+const sunLight = new THREE.PointLight(0xffffff, 2.2, 0, 0); // decay 0: direction is the honest part
+scene.add(sunLight);
+scene.add(new THREE.AmbientLight(0xffffff, 0.06)); // faint fill so night sides aren't void
+
+// ---- Earth & Moon meshes ------------------------------------------------
+const earthMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(u(earth.radius_km), 48, 32),
+  new THREE.MeshStandardMaterial({ color: earth.color, roughness: 0.9 })
+);
+scene.add(earthMesh);
+const moonMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(u(moon.radius_km), 32, 24),
+  new THREE.MeshStandardMaterial({ color: moon.color, roughness: 1.0 })
+);
+scene.add(moonMesh);
+
+// ---- orbit lines (Earth around Sun; Moon's drawn relative to Earth) -----
+function orbitLine(el, color, opacity) {
+  const pts = [];
+  for (let k = 0; k <= 512; k++) {
+    const p = keplerPos(el, (k / 512) * Math.PI * 2);
+    pts.push(new THREE.Vector3(u(p.x), u(p.y), u(p.z)));
   }
-  const perErr = Math.abs(rMin - a * (1 - e)), apoErr = Math.abs(rMax - a * (1 + e));
-  const pass = perErr < 1 && apoErr < 1 && maxResid < 1e-9;
-  const msg = `self-check ${pass ? 'PASS' : 'FAIL'} · perigee ${rMin.toFixed(1)} km ` +
-    `(Δ${perErr.toExponential(1)}) · apogee ${rMax.toFixed(1)} km (Δ${apoErr.toExponential(1)}) ` +
-    `· max Kepler resid ${maxResid.toExponential(1)} rad`;
-  console.log('[boundary-sky rung 2]', msg);
-  return { pass, msg };
-})();
+  return new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({ color, transparent: true, opacity }));
+}
+scene.add(orbitLine(earthEl, 0x2a4a3a, 0.5));
+const moonOrbitLine = orbitLine(moonEl, 0x3a5a7a, 0.6); // re-centered on Earth each frame
+scene.add(moonOrbitLine);
 
 // ---- starfield (tier: decorative — random, NOT real star positions) -----
 {
   const n = 1500, pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
-    const v = new THREE.Vector3().randomDirection().multiplyScalar(9000);
+    const v = new THREE.Vector3().randomDirection().multiplyScalar(9e5);
     pos.set([v.x, v.y, v.z], i * 3);
   }
   const g = new THREE.BufferGeometry();
@@ -200,33 +192,90 @@ document.getElementById('bodies-panel').innerHTML =
     return `<div style="margin-bottom:6px">${s}</div>`;
   }).join('');
 
+// ---- decidable self-check (rungs 2+3) -----------------------------------
+// For BOTH orbits: sampled perigee/apogee must match a(1∓e) to <1 km and the
+// Kepler residual |E - e·sinE - M| must stay <1e-9 rad.
+function checkOrbit(name, el) {
+  let rMin = Infinity, rMax = 0, maxResid = 0;
+  for (let k = 0; k < 4096; k++) {
+    const M = (k / 4096) * Math.PI * 2;
+    const E = solveKepler(M, el.e);
+    maxResid = Math.max(maxResid, Math.abs(E - el.e * Math.sin(E) - M));
+    const r = keplerPos(el, E).r;
+    rMin = Math.min(rMin, r); rMax = Math.max(rMax, r);
+  }
+  const perErr = Math.abs(rMin - el.a * (1 - el.e)),
+        apoErr = Math.abs(rMax - el.a * (1 + el.e));
+  const pass = perErr < 1 && apoErr < 1 && maxResid < 1e-9;
+  return { pass, msg: `${name}: ${pass ? 'PASS' : 'FAIL'} peri ${Math.round(rMin).toLocaleString('en')} km ` +
+    `apo ${Math.round(rMax).toLocaleString('en')} km resid ${maxResid.toExponential(1)}` };
+}
+const checks = [checkOrbit('Moon', moonEl), checkOrbit('Earth', earthEl)];
+const selfCheck = {
+  pass: checks.every(c => c.pass),
+  msg: `self-check ${checks.every(c => c.pass) ? 'PASS' : 'FAIL'} · ` + checks.map(c => c.msg).join(' · ')
+};
+console.log('[boundary-sky rung 3]', selfCheck.msg);
+
 // ---- scale toggle: inflates radii only; the lie is labeled --------------
 document.getElementById('scale-toggle').addEventListener('change', e => {
   const k = e.target.checked ? 20 : 1;
+  sunMesh.scale.setScalar(k);
   earthMesh.scale.setScalar(k);
   moonMesh.scale.setScalar(k);
+});
+
+// ---- camera rides with Earth (or the Sun, via toggle) -------------------
+let focusSun = false;
+document.getElementById('focus-toggle').addEventListener('change', e => {
+  focusSun = e.target.checked;
+  const target = focusSun ? new THREE.Vector3(0, 0, 0) : earthMesh.position.clone();
+  // keep current viewing offset, retarget
+  const offset = camera.position.clone().sub(controls.target);
+  controls.target.copy(target);
+  camera.position.copy(target).add(focusSun
+    ? new THREE.Vector3(0, 120000, 320000) // wide: the whole orbit in frame
+    : offset.setLength(Math.min(offset.length(), 1200)));
 });
 
 // ---- animate ------------------------------------------------------------
 const clockEl = document.getElementById('clock');
 const clock = new THREE.Clock();
 let simDays = 0;
+const prevEarth = new THREE.Vector3();
+let firstFrame = true;
 
 renderer.setAnimationLoop(() => {
   simDays += clock.getDelta() * SIM_DAYS_PER_SECOND;
 
-  // Moon: Keplerian motion (rung 2) — mean anomaly advances uniformly,
-  // position via Kepler's equation. Fast near perigee, slow near apogee.
-  const M = (simDays / el.T) * Math.PI * 2;
-  const p = keplerPos(solveKepler(M % (Math.PI * 2), el.e));
-  moonMesh.position.set(u(p.x), u(p.y), u(p.z));
+  // Earth: Keplerian around the Sun. Moon: Keplerian around the moving Earth.
+  const ep = orbitAt(earthEl, simDays);
+  earthMesh.position.set(u(ep.x), u(ep.y), u(ep.z));
+  const mp = orbitAt(moonEl, simDays);
+  moonMesh.position.copy(earthMesh.position).add(new THREE.Vector3(u(mp.x), u(mp.y), u(mp.z)));
+  moonOrbitLine.position.copy(earthMesh.position);
 
   // Earth spin at the measured sidereal rotation period.
   earthMesh.rotation.y = (simDays * 24 / earth.rotation_period_hours) * Math.PI * 2;
 
+  // Camera rides with Earth unless the Sun is focused.
+  if (firstFrame) {
+    controls.target.copy(earthMesh.position);
+    camera.position.copy(earthMesh.position).add(new THREE.Vector3(0, 140, 520));
+    prevEarth.copy(earthMesh.position);
+    firstFrame = false;
+  } else if (!focusSun) {
+    const delta = earthMesh.position.clone().sub(prevEarth);
+    camera.position.add(delta);
+    controls.target.add(delta);
+  }
+  prevEarth.copy(earthMesh.position);
+
   clockEl.textContent =
-    `sim day ${simDays.toFixed(1)} · lunar orbit ${(simDays / el.T).toFixed(2)} · ` +
-    `Earth–Moon ${Math.round(p.r).toLocaleString('en')} km · 1 s = 1 day · ` +
+    `sim day ${simDays.toFixed(1)} · year ${(simDays / earthEl.T).toFixed(2)} · ` +
+    `lunar orbit ${(simDays / moonEl.T).toFixed(2)} · ` +
+    `Earth–Sun ${Math.round(ep.r).toLocaleString('en')} km · ` +
+    `Earth–Moon ${Math.round(mp.r).toLocaleString('en')} km · 1 s = 1 day · ` +
     selfCheck.msg;
 
   controls.update();

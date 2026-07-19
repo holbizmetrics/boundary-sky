@@ -1,14 +1,49 @@
 {
+  "sun": {
+    "name": "Sun",
+    "radius_km": 695700.0,
+    "color": "#fff4d6",
+    "provenance": {
+      "tier": "measured",
+      "source": "IAU 2015 nominal solar radius / NASA Sun Fact Sheet"
+    },
+    "render_approximations": [
+      {
+        "what": "emissive sphere + point light with no distance falloff (decay 0); no limb darkening, no rotation, no corona",
+        "tier": "derived-simplification",
+        "why": "what matters at rung 3 is that light comes FROM the Sun's true position — Earth's terminator and the Moon's phases now follow from geometry, not from a hardcoded lamp direction",
+        "correction_path": "physical solar rendering later; light *direction* is already correct, which is the honest part",
+        "expected_error": "visual only — illumination direction is exact"
+      }
+    ]
+  },
   "earth": {
     "name": "Earth",
     "radius_km": 6371.0,
     "rotation_period_hours": 23.9345,
     "color": "#2e6fbb",
+    "orbit": {
+      "semi_major_axis_km": 149598023,
+      "sidereal_period_days": 365.256363,
+      "eccentricity": 0.0167086,
+      "inclination_deg": 0.0,
+      "ascending_node_deg": 0.0,
+      "arg_periapsis_deg": 102.94719,
+      "_angles_note": "inclination is 0 by DEFINITION — the ecliptic is Earth's orbital plane (J2000); longitude of perihelion 102.947° carried in ω with Ω=0"
+    },
     "provenance": {
       "tier": "measured",
-      "source": "NASA Earth Fact Sheet (mean volumetric radius)",
+      "source": "NASA Earth Fact Sheet (mean volumetric radius; orbit: J2000 mean elements)",
       "note": "radius is the mean; Earth is an oblate spheroid (equatorial 6378.1 km, polar 6356.8 km) — sphere rendering is a knowing simplification"
-    }
+    },
+    "render_approximations": [
+      {
+        "what": "Keplerian two-body ellipse with FIXED mean elements — no perihelion precession, no planetary perturbations",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons ephemerides",
+        "expected_error": "small vs true ephemeris at this rung's purposes; unquantified — honest residual, to be measured against Horizons before being trusted further"
+      }
+    ]
   },
   "moon": {
     "name": "Moon",
@@ -29,10 +64,10 @@
     },
     "render_approximations": [
       {
-        "what": "Keplerian two-body ellipse with FIXED mean elements — no apsidal/nodal precession, no perturbations (evection, variation)",
+        "what": "Keplerian two-body ellipse with FIXED mean elements — no apsidal/nodal precession, no perturbations (evection, variation); rendered relative to the moving Earth",
         "tier": "derived-simplification",
-        "why": "rung 2 renders the true ellipse shape and tilt (e, i now in the geometry, not just the data); the remaining gap is that the real Moon is heavily perturbed by the Sun and its ellipse rotates",
-        "correction_path": "JPL Horizons ephemerides (rung 3+) — real positions, not elements",
+        "why": "rung 2 rendered the true ellipse shape and tilt; the remaining gap is that the real Moon is heavily perturbed by the Sun and its ellipse rotates",
+        "correction_path": "JPL Horizons ephemerides — real positions, not elements",
         "expected_error": "up to ~5,000 km positional vs true ephemeris (lunar perturbation terms) — labeled, not hidden",
         "retired": {
           "what": "orbit drawn circular at semi-major axis, in the ecliptic plane",
@@ -42,18 +77,18 @@
       }
     ]
   },
+  "_epoch": {
+    "name": "Epoch",
+    "provenance": {
+      "tier": "derived-simplification",
+      "note": "sim day 0 puts Earth at perihelion AND the Moon at perigee simultaneously — an arbitrary alignment, not a real calendar date. Correction path: epoch-referenced mean anomalies, then Horizons."
+    }
+  },
   "_starfield": {
     "name": "Starfield",
     "provenance": {
       "tier": "decorative",
       "note": "random points for depth perception — NOT real star positions. Correction path: Hipparcos/Gaia bright-star catalog."
-    }
-  },
-  "_sunlight": {
-    "name": "Sunlight",
-    "provenance": {
-      "tier": "derived-simplification",
-      "note": "fixed directional light standing in for the Sun; no Sun object exists yet (rung 3)"
     }
   }
 }
