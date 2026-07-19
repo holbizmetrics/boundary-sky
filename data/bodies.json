@@ -155,6 +155,31 @@
       }
     ]
   },
+  "jupiter": {
+    "name": "Jupiter",
+    "radius_km": 69911,
+    "color": "#c8a678",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 778479000,
+      "sidereal_period_days": 4332.589,
+      "eccentricity": 0.0487,
+      "inclination_deg": 1.304,
+      "ascending_node_deg": 100.464,
+      "arg_periapsis_deg": 273.867
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA Jupiter Fact Sheet (volumetric mean radius; J2000 mean orbital elements)"
+    },
+    "render_approximations": [
+      {
+        "what": "fixed mean elements; no moons yet (Galileans are their own future arrivals); sphere ignores the ~6.5% oblateness",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons ephemerides; oblate spheroid geometry; Galilean moons as child orbits"
+      }
+    ]
+  },
   "_epoch": {
     "name": "Epoch",
     "provenance": {
