@@ -230,6 +230,32 @@
       }
     ]
   },
+  "neptune": {
+    "name": "Neptune",
+    "radius_km": 24622,
+    "color": "#4f7ce0",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 4514953000,
+      "sidereal_period_days": 60189,
+      "eccentricity": 0.0097,
+      "inclination_deg": 1.770,
+      "ascending_node_deg": 131.784,
+      "arg_periapsis_deg": 273.187
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA Neptune Fact Sheet (volumetric mean radius; J2000 mean orbital elements)",
+      "note": "the planet found by arithmetic before telescope — Le Verrier's residuals in Uranus's orbit were a labeled anomaly that got RESOLVED, the founding legend of this whole project"
+    },
+    "render_approximations": [
+      {
+        "what": "fixed mean elements (Neptune has completed barely one orbit since discovery — mean elements are least tested here)",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons ephemerides"
+      }
+    ]
+  },
   "_epoch": {
     "name": "Epoch",
     "provenance": {
