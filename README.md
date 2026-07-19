@@ -82,5 +82,10 @@ Known residuals, named on purpose (see `data/bodies.json` →
    carries two `correction` records against *itself* (entries 6, 14): twice
    the author quoted evidence numbers that differed from the run's printed
    output. Paste, don't paraphrase.
-5. The first `conjectured` object — with its falsifier. That's when this stops
-   being an orrery and becomes the thing it was born to be.
+5. **The first `conjectured` object** (here, 2026-07-19) — Planet Nine
+   (Batygin & Brown 2021 posterior peak), ghosted and dash-orbited so
+   conjecture can never be mistaken for measurement, its **falsifier shipped
+   in the data**: LSST non-detection + clustering-as-selection-bias kills it
+   (demotion-by-append); detection promotes it to `measured`. Either outcome
+   is the system working. All five rungs climbed in one day, on a phone and a
+   tablet, with a PCLA session verifying over the bus.
