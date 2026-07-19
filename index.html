@@ -193,6 +193,9 @@ document.getElementById('bodies-panel').innerHTML =
     if (b.provenance.note) s += `<div class="note">${b.provenance.note}</div>`;
     if (b.provenance.falsifier)
       s += `<div class="note"><b style="color:#f0a7c0">falsifier:</b> ${b.provenance.falsifier}</div>`;
+    if (b.distance_provenance)
+      s += `<div class="note">↳ distance known by: ${b.distance_provenance.method} ` +
+           `${tierBadge(b.distance_provenance.tier)}<br>&nbsp;&nbsp;${b.distance_provenance.note}</div>`;
     for (const ap of b.render_approximations ?? [])
       s += `<div class="note">↳ ${ap.what} ${tierBadge(ap.tier)}<br>` +
            `&nbsp;&nbsp;fix: ${ap.correction_path}</div>`;

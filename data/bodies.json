@@ -64,6 +64,15 @@
       "tier": "measured",
       "source": "NASA Moon Fact Sheet"
     },
+    "distance_provenance": {
+      "tier": "measured",
+      "method": "lunar laser ranging (LLR)",
+      "how": "round-trip light time to retroreflectors (Apollo 11/14/15, Lunokhod 1/2); millimeter precision (APOLLO experiment)",
+      "source": "NASA/JPL LLR; Murphy 2013 (Rep. Prog. Phys. 76 076901)",
+      "note": "rung 0 of the cosmic distance ladder — geometric, no astrophysical model in the loop (only relativistic light-time corrections). Bonus measured fact: LLR shows the Moon receding at ~3.8 cm/yr.",
+      "instantaneous_range_km": "~356,500–406,700 over long-term extremes; WIDER than the fixed-element a(1∓e) = 363,296/405,504 because of solar perturbations — consistent with the fixed-elements residual labeled in render_approximations",
+      "credit": "folded in from Researches/cosmic-distance-measurement via PCLA draft (termux-claude-907815e6, 2026-07-19)"
+    },
     "render_approximations": [
       {
         "what": "Keplerian two-body ellipse with FIXED mean elements — no apsidal/nodal precession, no perturbations (evection, variation); rendered relative to the moving Earth",
