@@ -75,6 +75,12 @@ Known residuals, named on purpose (see `data/bodies.json` →
    over the securedchat bus.
 3. **The Sun, for real** (here) — light *from* it, Earth orbiting it. Camera
    rides with Earth; a toggle steps back to see the whole year.
-4. Planets, one at a time, each arriving consistent.
+4. **Planets, one at a time** (here) — all eight arrived 2026-07-19, each in
+   its own commit with its own verified `arrival` record in the provenance
+   log. The renderer is fully data-driven: a body is its `bodies.json` entry
+   (radius, elements, parent, provenance) — no per-planet code. The log also
+   carries two `correction` records against *itself* (entries 6, 14): twice
+   the author quoted evidence numbers that differed from the run's printed
+   output. Paste, don't paraphrase.
 5. The first `conjectured` object — with its falsifier. That's when this stops
    being an orrery and becomes the thing it was born to be.
