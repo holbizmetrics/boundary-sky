@@ -124,7 +124,7 @@
       "sidereal_period_days": 224.701,
       "eccentricity": 0.0068,
       "inclination_deg": 3.395,
-      "ascending_node_deg": 76.680,
+      "ascending_node_deg": 76.68,
       "arg_periapsis_deg": 54.884
     },
     "provenance": {
@@ -146,9 +146,9 @@
     "orbit": {
       "parent": "sun",
       "semi_major_axis_km": 227956000,
-      "sidereal_period_days": 686.980,
+      "sidereal_period_days": 686.98,
       "eccentricity": 0.0935,
-      "inclination_deg": 1.850,
+      "inclination_deg": 1.85,
       "ascending_node_deg": 49.578,
       "arg_periapsis_deg": 286.502
     },
@@ -197,7 +197,7 @@
       "parent": "sun",
       "semi_major_axis_km": 1432041000,
       "sidereal_period_days": 10759.22,
-      "eccentricity": 0.0520,
+      "eccentricity": 0.052,
       "inclination_deg": 2.486,
       "ascending_node_deg": 113.665,
       "arg_periapsis_deg": 339.392
@@ -248,7 +248,7 @@
       "semi_major_axis_km": 4514953000,
       "sidereal_period_days": 60189,
       "eccentricity": 0.0097,
-      "inclination_deg": 1.770,
+      "inclination_deg": 1.77,
       "ascending_node_deg": 131.784,
       "arg_periapsis_deg": 273.187
     },
@@ -315,6 +315,33 @@
         "tier": "derived-simplification",
         "correction_path": "JPL Horizons ephemerides, where the resonance is implicit in the positions",
         "expected_error": "the crossing-orbits impression is the misleading part, not the km error — a label about geometry creating a false STORY, not just false positions"
+      }
+    ]
+  },
+  "halley": {
+    "name": "1P/Halley",
+    "radius_km": 5.5,
+    "color": "#6b7280",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 2667928000,
+      "sidereal_period_days": 27510,
+      "eccentricity": 0.96714,
+      "inclination_deg": 162.26,
+      "ascending_node_deg": 58.42,
+      "arg_periapsis_deg": 111.33
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "JPL Small-Body Database (1P/Halley), J2000 osculating elements; nucleus size + shape from the Giotto flyby (ESA, 1986)",
+      "note": "The founding triumph of the DERIVED tier: Edmond Halley applied Newton's brand-new gravitation to the comets of 1531/1607/1682, argued they were one returning body, and PREDICTED its return for 1758. He died in 1742 and never saw it — but it came back on schedule. This orbit is why 'derived' is trustworthy: a man bet his name across his own death on the equations and won. Retrograde (i>90°): Halley orbits the Sun backwards. Last perihelion 1986; next predicted 2061-07-28 — itself a falsifiable derived claim."
+    },
+    "render_approximations": [
+      {
+        "what": "fixed osculating elements; NON-GRAVITATIONAL forces omitted — a comet's sublimation jets thrust it off the pure-gravity path by thousands of km per apparition (why Halley's return dates drift and must be re-fit each orbit)",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons with non-gravitational parameters (A1, A2, A3)",
+        "expected_error": "coma and tail are not rendered (decorative); the nucleus is a true-scale ~5.5 km point — invisible beside its own orbit, which is the honest picture"
       }
     ]
   },
