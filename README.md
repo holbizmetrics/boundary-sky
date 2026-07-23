@@ -101,3 +101,18 @@ Known residuals, named on purpose (see `data/bodies.json` →
    is `measured` by parallax. That distance is **rung 1 of the cosmic distance
    ladder** (the Moon's laser ranging is rung 0): two purely-geometric rungs,
    now visible as a structure in one sky. The scale chasm is the datum.
+7. **The scale chasm, laddered** (2026-07-24) — rung 6 left a named-open
+   residual: Proxima's true distance overflows the scene, so it could only be
+   shown by direction, not position. This rung crosses that gap *in-app*. A
+   **distance-ladder view** toggle (off by default — the true-scale sky stays
+   the honest one) remaps radial distance onto a base-10 **log axis**: 600
+   scene units per decade of km. Direction is preserved exactly; only the
+   radius is log-distorted (so orbit shapes are hidden — a log radius is not an
+   ellipse). Now the Moon (~1901 units), the planets, Planet Nine (~3391) and
+   **Proxima (~5162)** sit in one readable frame, the ~4-decade Neptune→Proxima
+   chasm rendered as *structure* instead of an off-screen absence. Moons
+   collapse onto their planets (the view is heliocentric — a moon's orbit is
+   sub-pixel on this scale), named as a residual, not a bug. A load-time
+   self-check asserts the map stays monotonic and every body lands inside the
+   far plane; verified headless over all 22 bodies (visual check awaits an
+   operator's eyeball — no browser on the build host).

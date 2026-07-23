@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>boundary-sky — the Solar System + one conjecture + the first star (rung 6)</title>
+<title>boundary-sky — the Solar System + one conjecture + the first star, log-laddered (rung 7)</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden;
                font-family: system-ui, sans-serif; }
@@ -35,7 +35,7 @@
 </head>
 <body>
 <div id="hud">
-  <h1>boundary-sky <span class="note">rung 6 — the first parallax</span></h1>
+  <h1>boundary-sky <span class="note">rung 7 — the scale chasm, laddered</span></h1>
   <label>camera rides with<select id="focus-select"></select>
     <button id="reset-view" style="margin-left:6px;background:#16202e;color:#e8eef6;
       border:1px solid #2a3a52;border-radius:4px;padding:2px 8px;cursor:pointer">reset view</button>
@@ -45,6 +45,14 @@
     radii ×20 <span class="tier derived-simplification">labeled lie</span>
     <div class="note">True scale is the default — the discomfort is the point.
     This toggle inflates radii only (distances stay honest) and says so.</div>
+  </label>
+  <label>
+    <input type="checkbox" id="ladder-toggle">
+    distance-ladder view <span class="tier derived-simplification">log radius</span>
+    <div class="note">Off by default (the true-scale sky is the honest one).
+    On: radial distance becomes a base-10 LOG axis, so the Moon, the planets and
+    Proxima share one frame — the scale chasm as a readable structure. Direction
+    stays real; orbit shapes are hidden because a log radius distorts them.</div>
   </label>
   <details>
     <summary>provenance (every body declares itself)</summary>
@@ -141,6 +149,22 @@ function starDir(sp) { // RA/Dec (J2000 equatorial) -> scene unit vector (scene 
   return { x: ex, y: eclz, z: ecly };
 }
 
+// ---- distance-ladder view (scale chasm made readable) -------------------
+// The true-scale sky cannot hold the Moon AND Proxima in one frame: Proxima
+// is ~9000x Neptune's orbit and 67x beyond the far clip plane. This is a
+// DISPLAY transform (tier: derived-simplification) that maps radial distance
+// onto a base-10 LOG axis — one decade of km = a fixed number of scene units.
+// Direction is preserved exactly; radius is deliberately distorted, so orbit
+// SHAPES are meaningless here (hidden). Off by default; the honest sky is linear.
+const LADDER_FLOOR_KM = 1e5;          // 100,000 km — inside the Moon's orbit; the axis origin
+const LADDER_UNITS_PER_DECADE = 600;  // scene units per factor-of-10 in km
+function ladderRadius(rKm) {
+  if (rKm <= 0) return 0;
+  const r = Math.max(rKm, LADDER_FLOOR_KM);
+  return LADDER_UNITS_PER_DECADE * (Math.log10(r) - Math.log10(LADDER_FLOOR_KM));
+}
+const LADDER_MARKER_UNITS = 60;       // every body drawn as one readable marker size
+
 // ---- renderer / scene / camera -----------------------------------------
 const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
 renderer.setSize(innerWidth, innerHeight);
@@ -209,6 +233,7 @@ scene.add(new THREE.PointLight(0xffffff, 2.2, 0, 0));
 scene.add(new THREE.AmbientLight(0xffffff, 0.06));
 
 // ---- starfield (tier: decorative — random, NOT real star positions) -----
+let starfield;
 {
   const n = 1500, pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
@@ -217,7 +242,8 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.06));
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x9db4cc, size: 2, sizeAttenuation: false })));
+  starfield = new THREE.Points(g, new THREE.PointsMaterial({ color: 0x9db4cc, size: 2, sizeAttenuation: false }));
+  scene.add(starfield);
 }
 
 // ---- HUD: provenance panel + focus list, generated FROM the data --------
@@ -278,9 +304,32 @@ const selfCheck = {
 console.log('[boundary-sky rung 4]', selfCheck.msg);
 
 // ---- scale toggle: inflates radii only; the lie is labeled --------------
+let scaleToggleK = 1;
 document.getElementById('scale-toggle').addEventListener('change', e => {
-  const k = e.target.checked ? 20 : 1;
-  for (const s of Object.values(sys)) s.mesh.scale.setScalar(k);
+  scaleToggleK = e.target.checked ? 20 : 1;
+  if (!ladderMode) for (const s of Object.values(sys)) s.mesh.scale.setScalar(scaleToggleK);
+});
+
+// ---- distance-ladder toggle: log-radial view, direction preserved -------
+// A display-only mode switch. On: hide the decorative starfield (it lives at a
+// fake shell radius and would collide with real bodies re-placed by log), hide
+// orbit lines (a log radius makes their shape a lie), pull the camera back to
+// the Sun to see the whole ladder. Off: restore the true-scale sky verbatim.
+let ladderMode = false;
+document.getElementById('ladder-toggle').addEventListener('change', e => {
+  ladderMode = e.target.checked;
+  if (starfield) starfield.visible = !ladderMode;
+  for (const s of Object.values(sys)) {
+    if (s.line) s.line.visible = !ladderMode;
+    if (ladderMode) {
+      if (!s.star) s.mesh.scale.setScalar(LADDER_MARKER_UNITS / u(s.data.radius_km));
+    } else {
+      s.mesh.scale.setScalar(scaleToggleK); // back to true scale (× any radii-inflate)
+    }
+  }
+  focusKey = ladderMode ? 'sun' : focusKey; // ladder is a whole-structure view
+  focusSel.value = focusKey;
+  firstFrame = true; // re-seat the camera for the new framing
 });
 
 // ---- positions: each body orbits its parent (computed per frame) --------
@@ -300,12 +349,48 @@ function bodyPosKm(key, simDays) {
   return p;
 }
 
+// ---- decidable self-check for the LADDER: log-radius must be monotonic ---
+// and every body must land INSIDE the far clip plane (the whole point: the
+// linear sky can't, the log sky must). Runs once at load; a distorting view
+// that quietly pushed Proxima out of frame would defeat its own purpose.
+{
+  posCache.clear();
+  const rows = [];
+  for (const [key, s] of Object.entries(sys)) {
+    const p = bodyPosKm(key, 0);
+    const rKm = s.star ? p.r : Math.hypot(p.x, p.y, p.z); // stars: TRUE distance, not shell
+    rows.push({ body: s.data.name, true_km: rKm, ladder_units: ladderRadius(rKm) });
+  }
+  posCache.clear();
+  rows.sort((a, b) => a.true_km - b.true_km);
+  let mono = true;
+  for (let i = 1; i < rows.length; i++)
+    if (rows[i].ladder_units < rows[i - 1].ladder_units - 1e-9) mono = false;
+  const outermost = Math.max(...rows.map(r => r.ladder_units));
+  const inFrame = outermost < 6e8; // camera far plane
+  const ladderPass = mono && inFrame;
+  console.table(rows);
+  console.log('[boundary-sky ladder]',
+    `self-check ${ladderPass ? 'PASS' : 'FAIL'} — monotonic ${mono}, ` +
+    `outermost ${outermost.toFixed(1)} u < far-plane 6e8 ${inFrame} ` +
+    `(${rows.length} bodies; direction preserved, radius log-mapped)`);
+}
+
 // ---- camera rides with the focused body ---------------------------------
 let focusKey = 'earth';
 let firstFrame = true;
 const prevFocus = new THREE.Vector3();
 function focusDistance(key) {
   const s = sys[key];
+  if (ladderMode) { // frame the whole log ladder — floor set by the outermost rung (Proxima)
+    let maxR = 0;
+    for (const [k, t] of Object.entries(sys)) {
+      const p = bodyPosKm(k, simDays);
+      const rKm = t.star ? p.r : Math.hypot(p.x, p.y, p.z); // stars: TRUE distance
+      maxR = Math.max(maxR, ladderRadius(rKm));
+    }
+    return maxR * 1.3 || 3000;
+  }
   if (s.star) return STAR_SHELL * 0.08; // the star as a point against the field
   if (!s.el) { // Sun: frame the outermost MEASURED orbit — a conjecture may not
                // set the scale of the confirmed sky; zoom out to find the ghost.
@@ -336,10 +421,20 @@ renderer.setAnimationLoop(() => {
 
   for (const [key, s] of Object.entries(sys)) {
     const p = bodyPosKm(key, simDays);
-    s.mesh.position.set(u(p.x), u(p.y), u(p.z));
-    if (s.line) { // orbit line rides on the parent
-      const par = bodyPosKm(s.el.parent, simDays);
-      s.line.position.set(u(par.x), u(par.y), u(par.z));
+    if (ladderMode) {
+      // Keep the real DIRECTION, replace the radius with its log-mapped value.
+      // Stars use p.r (the TRUE parallax distance) — this is where Proxima lands
+      // honestly; planets use the magnitude of their true position.
+      const rKm = s.star ? p.r : Math.hypot(p.x, p.y, p.z);
+      const mag = Math.hypot(p.x, p.y, p.z) || 1;
+      const rl = ladderRadius(rKm);
+      s.mesh.position.set(p.x / mag * rl, p.y / mag * rl, p.z / mag * rl);
+    } else {
+      s.mesh.position.set(u(p.x), u(p.y), u(p.z));
+      if (s.line) { // orbit line rides on the parent
+        const par = bodyPosKm(s.el.parent, simDays);
+        s.line.position.set(u(par.x), u(par.y), u(par.z));
+      }
     }
     if (s.data.rotation_period_hours)
       s.mesh.rotation.y = (simDays * 24 / s.data.rotation_period_hours) * Math.PI * 2;

@@ -588,7 +588,7 @@
       {
         "what": "POSITION IS NOT TO SCALE. The rendered direction is real (RA/Dec J2000 → ecliptic frame, obliquity 23.4393°), but the star is drawn on the decorative star-shell (2.5×10¹¹ km) because its true distance, 4.02×10¹³ km, is 8,898× Neptune's orbit and 67× beyond the camera's far clip plane — it cannot be placed to scale in a solar-system view. The marker's size is not to scale either (a true 107,000 km disc would be far sub-pixel). Only the DIRECTION and the stated distance are measured; the drawn radius and radial position are the approximation.",
         "tier": "derived-simplification",
-        "correction_path": "none possible in a single-scale scene — the gap IS the datum the distance ladder exists to cross; a true-scale view would need a logarithmic-radius or multi-scale renderer (a future rung)"
+        "correction_path": "DELIVERED 2026-07-24 (rung 7): the 'distance-ladder view' HUD toggle maps radial distance onto a base-10 log axis (600 units/decade from a 10⁵ km floor), placing Proxima at ~5162 scene units — 67× inside the same far plane it overflows at true scale — in one frame with the Moon and every planet. Direction stays exact; only the radius is log-distorted (orbit shapes hidden, tier: derived-simplification). The DEFAULT linear view is still not-to-scale (this approximation stands there); the toggle is the honest cross of the chasm. The gap IS the datum the distance ladder exists to cross — now readable as structure rather than an off-screen absence."
       }
     ]
   },
