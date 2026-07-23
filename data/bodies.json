@@ -562,6 +562,36 @@
       }
     ]
   },
+  "proxima": {
+    "name": "Proxima Centauri",
+    "color": "#ff5a3c",
+    "radius_km": 107277,
+    "star_position": {
+      "ra_deg": 217.4287,
+      "dec_deg": -62.6794,
+      "distance_ly": 4.2465,
+      "distance_km": 4.0175e13
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "Gaia DR3 (parallax 768.0665 mas → 4.2465 ly); RA/Dec J2000; radius 0.1542 R☉ from interferometry",
+      "note": "The first star in the sky, and the nearest one to the Sun — a red dwarf 4.25 light-years away. Its DISTANCE is the point of this rung: measured by trigonometric parallax, rung 1 of the cosmic distance ladder, the step directly above the Moon's laser ranging (rung 0). Parallax is pure geometry — the star appears to shift against the far background as Earth swings to opposite sides of its orbit; the shift's half-angle and the known Earth–Sun baseline give the distance by triangle alone, no astrophysical model in the loop. Founding case: Friedrich Bessel measured 61 Cygni this way in 1838 — the first time a star's distance was known — the parallax equivalent of Halley's derived-tier bet. Proxima's own parallax (0.768″) is the largest of any star, which is exactly what 'nearest' means."
+    },
+    "distance_provenance": {
+      "tier": "measured",
+      "method": "trigonometric parallax",
+      "how": "annual parallax 768.07 mas (Gaia DR3): the star's apparent ellipse against the background as Earth orbits; distance = baseline / tan(parallax), geometry only",
+      "source": "Gaia DR3",
+      "note": "rung 1 of the cosmic distance ladder — the first purely-geometric rung beyond the solar system, sitting directly above the Moon's LLR (rung 0). Both rungs share the honesty that no astrophysical model sits in the loop: LLR times light, parallax turns a triangle. Everything past a few thousand parsecs needs the model-laden rungs above this one (standard candles, redshift) — this is the last one you can walk by geometry alone."
+    },
+    "render_approximations": [
+      {
+        "what": "POSITION IS NOT TO SCALE. The rendered direction is real (RA/Dec J2000 → ecliptic frame, obliquity 23.4393°), but the star is drawn on the decorative star-shell (2.5×10¹¹ km) because its true distance, 4.02×10¹³ km, is 8,898× Neptune's orbit and 67× beyond the camera's far clip plane — it cannot be placed to scale in a solar-system view. The marker's size is not to scale either (a true 107,000 km disc would be far sub-pixel). Only the DIRECTION and the stated distance are measured; the drawn radius and radial position are the approximation.",
+        "tier": "derived-simplification",
+        "correction_path": "none possible in a single-scale scene — the gap IS the datum the distance ladder exists to cross; a true-scale view would need a logarithmic-radius or multi-scale renderer (a future rung)"
+      }
+    ]
+  },
   "_epoch": {
     "name": "Epoch",
     "provenance": {
@@ -573,7 +603,7 @@
     "name": "Starfield",
     "provenance": {
       "tier": "decorative",
-      "note": "random points for depth perception — NOT real star positions. Correction path: Hipparcos/Gaia bright-star catalog."
+      "note": "random points for depth perception — NOT real star positions. As of rung 6 exactly ONE real star sits among them in its true direction: Proxima Centauri (a separate 'measured' object) — the boundary between scenery and sky, drawn on the same shell. Correction path: Hipparcos/Gaia bright-star catalog for the rest."
     }
   }
 }

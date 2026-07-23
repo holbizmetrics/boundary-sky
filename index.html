@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>boundary-sky — the Solar System + one conjecture (rung 5)</title>
+<title>boundary-sky — the Solar System + one conjecture + the first star (rung 6)</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden;
                font-family: system-ui, sans-serif; }
@@ -35,7 +35,7 @@
 </head>
 <body>
 <div id="hud">
-  <h1>boundary-sky <span class="note">rung 5 — the boundary itself</span></h1>
+  <h1>boundary-sky <span class="note">rung 6 — the first parallax</span></h1>
   <label>camera rides with<select id="focus-select"></select>
     <button id="reset-view" style="margin-left:6px;background:#16202e;color:#e8eef6;
       border:1px solid #2a3a52;border-radius:4px;padding:2px 8px;cursor:pointer">reset view</button>
@@ -128,6 +128,19 @@ function orbitAt(el, simDays) {
   return keplerPos(el, solveKepler(M, el.e));
 }
 
+// ---- first star (rung 6): a fixed DIRECTION on the decorative shell ------
+// The distance is measured (parallax); the drawn position is NOT to scale —
+// the true distance is 67x beyond the far clip plane. Only the direction is real.
+const STAR_SHELL = 2.5e8; // scene units — the same shell the decorative starfield sits on
+const OBLIQUITY = 23.4393 * DEG;
+function starDir(sp) { // RA/Dec (J2000 equatorial) -> scene unit vector (scene y = ecliptic north)
+  const a = sp.ra_deg * DEG, d = sp.dec_deg * DEG;
+  const ex = Math.cos(d) * Math.cos(a), ey = Math.cos(d) * Math.sin(a), ez = Math.sin(d);
+  const ecly = ey * Math.cos(OBLIQUITY) + ez * Math.sin(OBLIQUITY); // rotate -obliquity about x
+  const eclz = -ey * Math.sin(OBLIQUITY) + ez * Math.cos(OBLIQUITY);
+  return { x: ex, y: eclz, z: ecly };
+}
+
 // ---- renderer / scene / camera -----------------------------------------
 const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
 renderer.setSize(innerWidth, innerHeight);
@@ -143,6 +156,19 @@ controls.enableDamping = true;
 const sys = {}; // key → { data, mesh, el?, line? }
 for (const [key, b] of Object.entries(bodies)) {
   if (key.startsWith('_')) continue;
+  if (b.star_position) { // a real star: fixed direction on the shell, self-luminous marker
+    const dir = starDir(b.star_position);
+    const marker = new THREE.Points(
+      new THREE.BufferGeometry().setAttribute('position',
+        new THREE.BufferAttribute(new Float32Array([0, 0, 0]), 3)),
+      new THREE.PointsMaterial({ color: b.color, size: 8, sizeAttenuation: false }));
+    marker.position.set(dir.x * STAR_SHELL, dir.y * STAR_SHELL, dir.z * STAR_SHELL);
+    scene.add(marker);
+    const km = STAR_SHELL * KM_PER_UNIT; // rendered (not true) radial distance, in km
+    sys[key] = { data: b, mesh: marker, star: true,
+      fixedKm: { x: dir.x * km, y: dir.y * km, z: dir.z * km, r: b.star_position.distance_km } };
+    continue;
+  }
   const isSun = !b.orbit;
   const conjectured = b.provenance.tier === 'conjectured';
   // Conjecture must LOOK different from measurement even with the HUD closed:
@@ -263,7 +289,8 @@ function bodyPosKm(key, simDays) {
   if (posCache.has(key)) return posCache.get(key);
   const s = sys[key];
   let p;
-  if (!s.el) p = { x: 0, y: 0, z: 0, r: 0 };
+  if (s.star) p = s.fixedKm;
+  else if (!s.el) p = { x: 0, y: 0, z: 0, r: 0 };
   else {
     const rel = orbitAt(s.el, simDays);
     const par = bodyPosKm(s.el.parent, simDays);
@@ -279,6 +306,7 @@ let firstFrame = true;
 const prevFocus = new THREE.Vector3();
 function focusDistance(key) {
   const s = sys[key];
+  if (s.star) return STAR_SHELL * 0.08; // the star as a point against the field
   if (!s.el) { // Sun: frame the outermost MEASURED orbit — a conjecture may not
                // set the scale of the confirmed sky; zoom out to find the ghost.
     let maxApo = 0;

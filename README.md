@@ -65,7 +65,8 @@ Known residuals, named on purpose (see `data/bodies.json` →
   perihelion/aphelion is the mean-element residual, already visible and
   named); the epoch is arbitrary (`_epoch` label: sim day 0 = perihelion +
   perigee at once).
-- Starfield is random points (`decorative`).
+- Starfield is random points (`decorative`) — **except one**: as of rung 6,
+  Proxima Centauri sits among them in its true direction, a `measured` star.
 
 ## Roadmap rungs (base case before galaxy)
 
@@ -89,3 +90,14 @@ Known residuals, named on purpose (see `data/bodies.json` →
    (demotion-by-append); detection promotes it to `measured`. Either outcome
    is the system working. All five rungs climbed in one day, on a phone and a
    tablet, with a PCLA session verifying over the bus.
+6. **The first parallax** (2026-07-23) — the sky leaves the solar system.
+   Two comets (Halley, Hale-Bopp) and seven moons (the Moon, the four
+   Galileans, Titan, Triton) arrived first; Hale-Bopp's near-parabolic orbit
+   (e=0.995) forced a safeguarded Kepler solver, logged finding → resolution →
+   arrival. Then the first star: **Proxima Centauri**, drawn in its true sky
+   direction (RA/Dec → ecliptic) but **not to scale** — its real distance,
+   4.02×10¹³ km, is 8,898× Neptune's orbit and 67× beyond the far clip plane,
+   so the position is an honest `derived-simplification` while the *distance*
+   is `measured` by parallax. That distance is **rung 1 of the cosmic distance
+   ladder** (the Moon's laser ranging is rung 0): two purely-geometric rungs,
+   now visible as a structure in one sky. The scale chasm is the datum.
