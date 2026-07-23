@@ -322,6 +322,33 @@
       }
     ]
   },
+  "titan": {
+    "name": "Titan",
+    "radius_km": 2574.7,
+    "color": "#d9a066",
+    "orbit": {
+      "parent": "saturn",
+      "semi_major_axis_km": 1221870,
+      "sidereal_period_days": 15.945,
+      "eccentricity": 0.0288,
+      "inclination_deg": 0.34854,
+      "ascending_node_deg": 0,
+      "arg_periapsis_deg": 0,
+      "_angles_note": "node and periapsis set to 0: the orbit precesses under Saturn's oblateness and these angles are weakly pinned in a fixed-element model — they rotate the ellipse but do not move the perihelion/aphelion the self-check tests"
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA/JPL Saturnian satellite mean elements; radius from Cassini radar/imaging",
+      "note": "Second-largest moon in the solar system, and the only one with a substantial atmosphere — ~1.5 bar of nitrogen, thicker than Earth's, wrapped in an orange organic haze that hid its surface until Cassini's radar and the Huygens probe (landed 2005-01-14, the most distant landing ever made). It has a full liquid cycle like Earth's, but the rain, rivers and polar seas are methane and ethane, not water. Discovered by Christiaan Huygens in 1655."
+    },
+    "render_approximations": [
+      {
+        "what": "elements referenced to Saturn's Laplace/equatorial plane are applied directly in the ecliptic frame: the plane's tilt to Saturn's orbit (and its node) is omitted, so the orbit is drawn a few degrees off — invisible at this scale; fixed two-body ellipse, no precession; the orange atmospheric haze is not rendered (the sphere is a bare ~2575 km point)",
+        "tier": "derived-simplification",
+        "correction_path": "full frame transform through Saturn's pole orientation; JPL Horizons for precessing elements"
+      }
+    ]
+  },
   "uranus": {
     "name": "Uranus",
     "radius_km": 25362,
@@ -370,6 +397,33 @@
         "what": "fixed mean elements (Neptune has completed barely one orbit since discovery — mean elements are least tested here)",
         "tier": "derived-simplification",
         "correction_path": "JPL Horizons ephemerides"
+      }
+    ]
+  },
+  "triton": {
+    "name": "Triton",
+    "radius_km": 1353.4,
+    "color": "#c9a9a0",
+    "orbit": {
+      "parent": "neptune",
+      "semi_major_axis_km": 354759,
+      "sidereal_period_days": 5.876854,
+      "eccentricity": 0.000016,
+      "inclination_deg": 156.885,
+      "ascending_node_deg": 0,
+      "arg_periapsis_deg": 0,
+      "_angles_note": "node and periapsis set to 0: the orbit is essentially a perfect circle (e=0.000016), so periapsis is undefined and node weakly pinned — neither moves the a(1∓e) the self-check tests"
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA/JPL Neptunian satellite mean elements; radius from Voyager 2 (1989 flyby)",
+      "note": "The one moon that tells you it doesn't belong: inclination 156.9° means Triton orbits Neptune BACKWARDS (retrograde), against the planet's spin. Large moons that formed with their planet all go prograde — so Triton was CAPTURED, a Kuiper Belt object Neptune caught and never let go, its orbit the fossil of that violence. It is the coldest measured surface in the solar system (~38 K) yet geologically alive: Voyager 2 photographed nitrogen geysers erupting through its cantaloupe-textured ice. Tidal drag is spiralling it inward; in a few billion years Neptune will tear it into a ring. Discovered by William Lassell in 1846, just 17 days after Neptune itself."
+    },
+    "render_approximations": [
+      {
+        "what": "elements referenced to Neptune's Laplace/equatorial plane applied directly in the ecliptic frame (plane tilt + node omitted); fixed two-body circle, no precession; nitrogen geysers and cantaloupe terrain not rendered (bare ~1353 km sphere)",
+        "tier": "derived-simplification",
+        "correction_path": "full frame transform through Neptune's pole orientation; JPL Horizons"
       }
     ]
   },
