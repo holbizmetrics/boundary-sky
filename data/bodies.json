@@ -183,9 +183,117 @@
     },
     "render_approximations": [
       {
-        "what": "fixed mean elements; no moons yet (Galileans are their own future arrivals); sphere ignores the ~6.5% oblateness",
+        "what": "fixed mean elements; the four Galilean moons now orbit as child bodies, but the ~90 smaller moons and the ring system are omitted; sphere ignores the ~6.5% oblateness",
         "tier": "derived-simplification",
-        "correction_path": "JPL Horizons ephemerides; oblate spheroid geometry; Galilean moons as child orbits"
+        "correction_path": "JPL Horizons ephemerides; oblate spheroid geometry; remaining satellites + rings"
+      }
+    ]
+  },
+  "io": {
+    "name": "Io",
+    "radius_km": 1821.6,
+    "color": "#c9b458",
+    "orbit": {
+      "parent": "jupiter",
+      "semi_major_axis_km": 421700,
+      "sidereal_period_days": 1.769138,
+      "eccentricity": 0.0041,
+      "inclination_deg": 0.036,
+      "ascending_node_deg": 0,
+      "arg_periapsis_deg": 0,
+      "_angles_note": "node and periapsis set to 0: the orbit is near-circular (e=0.004) and precesses fast under Jupiter's oblateness, so these angles are weakly determined and physically un-pinned in a fixed-element model — they only rotate an almost-round ellipse and do not move the perihelion/aphelion the self-check tests"
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA/JPL Jovian satellite mean elements; radius from Galileo/Voyager imaging",
+      "note": "One of the four moons Galileo saw on 1610-01-07 and named the Medicean Stars — four points of light circling something that was not Earth, the observation that broke the geocentric sky. Innermost Galilean and the most volcanically active body known: tidal heating, pumped by the Io:Europa:Ganymede 1:2:4 Laplace resonance, keeps it molten. That resonance is not put in by hand here — it falls out of the three measured periods (ratios 2.01 and 4.04)."
+    },
+    "render_approximations": [
+      {
+        "what": "elements are referenced to Jupiter's Laplace/equatorial plane but applied directly in the ecliptic frame: the ~3.1° tilt of that plane to Jupiter's orbit (and its node) is omitted, so the moon plane is drawn nearly flat to the ecliptic — off by a few degrees, invisible at this scale. Fixed two-body ellipse, no precession.",
+        "tier": "derived-simplification",
+        "correction_path": "full frame transform through Jupiter's pole orientation (Laplace plane → ecliptic); JPL Horizons for precessing elements"
+      }
+    ]
+  },
+  "europa": {
+    "name": "Europa",
+    "radius_km": 1560.8,
+    "color": "#d7dae0",
+    "orbit": {
+      "parent": "jupiter",
+      "semi_major_axis_km": 671034,
+      "sidereal_period_days": 3.551181,
+      "eccentricity": 0.0090,
+      "inclination_deg": 0.466,
+      "ascending_node_deg": 0,
+      "arg_periapsis_deg": 0,
+      "_angles_note": "node and periapsis set to 0 for the same reason as Io: near-circular, fast-precessing, weakly pinned"
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA/JPL Jovian satellite mean elements; radius from Galileo imaging",
+      "note": "Second Galilean. Smoothest surface in the solar system — a young ice shell over a saltwater ocean holding more liquid water than all of Earth's, kept warm by the same resonant tidal flexing. The middle rung of the 1:2:4 chain."
+    },
+    "render_approximations": [
+      {
+        "what": "Laplace-plane elements applied in the ecliptic frame (~3.1° tilt + node omitted); fixed two-body ellipse, no precession",
+        "tier": "derived-simplification",
+        "correction_path": "full frame transform through Jupiter's pole; JPL Horizons"
+      }
+    ]
+  },
+  "ganymede": {
+    "name": "Ganymede",
+    "radius_km": 2634.1,
+    "color": "#8a7f76",
+    "orbit": {
+      "parent": "jupiter",
+      "semi_major_axis_km": 1070412,
+      "sidereal_period_days": 7.154553,
+      "eccentricity": 0.0013,
+      "inclination_deg": 0.177,
+      "ascending_node_deg": 0,
+      "arg_periapsis_deg": 0,
+      "_angles_note": "node and periapsis set to 0: near-circular (e=0.001), weakly pinned"
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA/JPL Jovian satellite mean elements; radius from Galileo imaging",
+      "note": "Third Galilean and the largest moon in the solar system — 2634 km radius, bigger than the planet Mercury (2440 km). The only moon with its own magnetosphere. Outer rung of the 1:2:4 resonance."
+    },
+    "render_approximations": [
+      {
+        "what": "Laplace-plane elements applied in the ecliptic frame (~3.1° tilt + node omitted); fixed two-body ellipse, no precession",
+        "tier": "derived-simplification",
+        "correction_path": "full frame transform through Jupiter's pole; JPL Horizons"
+      }
+    ]
+  },
+  "callisto": {
+    "name": "Callisto",
+    "radius_km": 2410.3,
+    "color": "#6b6560",
+    "orbit": {
+      "parent": "jupiter",
+      "semi_major_axis_km": 1882700,
+      "sidereal_period_days": 16.689018,
+      "eccentricity": 0.0074,
+      "inclination_deg": 0.192,
+      "ascending_node_deg": 0,
+      "arg_periapsis_deg": 0,
+      "_angles_note": "node and periapsis set to 0: near-circular, weakly pinned"
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "NASA/JPL Jovian satellite mean elements; radius from Galileo imaging",
+      "note": "Outermost Galilean and the most heavily cratered body known — an ancient, dead surface that never resurfaced. It sits OUTSIDE the 1:2:4 resonance, which is exactly why it stayed cold and geologically still while the inner three are heated: the same measured periods that place Io, Europa and Ganymede in lockstep leave Callisto free."
+    },
+    "render_approximations": [
+      {
+        "what": "Laplace-plane elements applied in the ecliptic frame (~3.1° tilt + node omitted); fixed two-body ellipse, no precession",
+        "tier": "derived-simplification",
+        "correction_path": "full frame transform through Jupiter's pole; JPL Horizons"
       }
     ]
   },
