@@ -94,11 +94,21 @@ function makeOrbit(o) {
   };
 }
 function solveKepler(M, e) {
-  let E = M;
-  for (let k = 0; k < 20; k++) {
-    const d = (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
-    E -= d;
-    if (Math.abs(d) < 1e-13) break;
+  // Safeguarded Newton: the root of E - e*sinE = M lies within e of M
+  // (since E = M + e*sinE), so [M-e, M+e] is a guaranteed bracket. Plain
+  // undamped Newton from E=M diverges as e->1 (the derivative 1-e*cosE
+  // collapses near perihelion); bisection fallback keeps every step inside
+  // the bracket so near-parabolic orbits (Hale-Bopp, e=0.995) converge.
+  let lo = M - e, hi = M + e;
+  let E = M + e * Math.sin(M);
+  for (let k = 0; k < 100; k++) {
+    const f = E - e * Math.sin(E) - M;
+    if (f > 0) hi = E; else lo = E;
+    const fp = 1 - e * Math.cos(E);
+    let En = E - f / fp;
+    if (!(En > lo && En < hi)) En = 0.5 * (lo + hi);
+    if (Math.abs(En - E) < 1e-14) return En;
+    E = En;
   }
   return E;
 }

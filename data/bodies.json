@@ -345,6 +345,33 @@
       }
     ]
   },
+  "hale_bopp": {
+    "name": "C/1995 O1 (Hale–Bopp)",
+    "radius_km": 30,
+    "color": "#8aa9c0",
+    "orbit": {
+      "parent": "sun",
+      "semi_major_axis_km": 27885043000,
+      "sidereal_period_days": 929500,
+      "eccentricity": 0.995086,
+      "inclination_deg": 89.43,
+      "ascending_node_deg": 282.47,
+      "arg_periapsis_deg": 130.59
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "JPL Small-Body Database (C/1995 O1), post-1997-perihelion osculating elements; nucleus diameter ~30 km from HST + radio (Weaver/Fernández)",
+      "note": "The stress test that upgraded the solver. At e=0.995086 this orbit is near-parabolic: perihelion 0.916 AU, aphelion 371.9 AU. The page's original undamped-Newton Kepler solver DIVERGED here (worst residual 6.75e11 rad vs the <1e-9 gate) — the decidable self-check refused it, exactly as designed. It ships only after a safeguarded-Newton solver (bracketed [M-e,M+e] with bisection fallback) was proven to converge on every body PLUS this one (worst residual 2.0e-14 rad). Jupiter's 1997 passage cut the period from ~4200 to ~2500 yr; the elements here are the post-encounter osculating set, not the incoming orbit."
+    },
+    "render_approximations": [
+      {
+        "what": "fixed osculating elements; non-gravitational forces and the Jupiter-altered pre/post-1997 orbit split are both collapsed into a single post-encounter element set",
+        "tier": "derived-simplification",
+        "correction_path": "JPL Horizons two-epoch fit (incoming vs outgoing orbit)",
+        "expected_error": "coma and tail not rendered (decorative); nucleus is a true-scale ~30 km point"
+      }
+    ]
+  },
   "planet_nine": {
     "name": "Planet Nine",
     "radius_km": 16600,
