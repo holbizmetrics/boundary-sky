@@ -592,6 +592,36 @@
       }
     ]
   },
+  "delta_cephei": {
+    "name": "δ Cephei",
+    "color": "#fdf1c8",
+    "radius_km": 32071770.0,
+    "star_position": {
+      "ra_deg": 337.2928,
+      "dec_deg": 58.4152,
+      "distance_ly": 890.0,
+      "distance_km": 8430800000000000.0
+    },
+    "provenance": {
+      "tier": "measured",
+      "source": "HST Fine Guidance Sensor parallax 3.66±0.10 mas → 273±7 pc / 890±20 ly (Benedict et al. 2002); RA/Dec J2000; radius 46.1 R☉, Teff 5905 K, spectral F5Ib–G1Ib, pulsation period 5.366249 d, apparent mag 3.48–4.37 (Cepheus)",
+      "note": "The second star, and the most important single star in the history of measuring the universe: the PROTOTYPE Cepheid variable. It physically pulsates every 5.37 days, brightening and dimming as it swells and shrinks. In 1908–12 Henrietta Leavitt found that a Cepheid's pulsation PERIOD fixes its true luminosity — so its apparent brightness gives its distance. That period–luminosity law is rung 2 of the cosmic distance ladder, the first rung that reaches BEYOND parallax range, all the way to other galaxies (it is how Hubble measured Andromeda and found the universe expanding). δ Cephei is the star the whole rung is named for and calibrated on. Its own distance here, though, is honest rung 1: measured by parallax (HST), NOT by the P–L law — you calibrate the law with the parallax, you do not measure this star from it (that would be circular). So this one star is exactly where rung 2 is bolted onto rung 1."
+    },
+    "distance_provenance": {
+      "tier": "measured",
+      "method": "trigonometric parallax (HST Fine Guidance Sensor)",
+      "how": "annual parallax 3.66±0.10 mas (Benedict et al. 2002, HST FGS): distance = baseline / tan(parallax), geometry only — the same rung-1 method as Proxima, at 210× the distance",
+      "source": "HST FGS parallax, Benedict et al. 2002 (arXiv:astro-ph/0206214)",
+      "note": "rung 1 measures THIS star; the star then CALIBRATES rung 2. The period–luminosity relation (Leavitt 1908–12) is the standard candle that carries distance beyond a few thousand parsecs where parallax angles vanish — but its zero-point must be set by stars whose distance is already known geometrically. δ Cephei, with a direct HST parallax, is one of those anchors. So the ladder here is literal: rung 2 (standard candle) stands on rung 1 (parallax) stands on rung 0 (the Moon's laser ranging), all three now visible in one sky."
+    },
+    "render_approximations": [
+      {
+        "what": "POSITION IS NOT TO SCALE. The rendered direction is real (RA/Dec J2000 → ecliptic frame, obliquity 23.4393°), but the star is drawn on the decorative star-shell (2.5×10¹¹ km): its true distance, 8.43×10¹⁵ km, is 210× Proxima's and ~1.9 million× Neptune's orbit — utterly off any solar-system scale. The marker size is not to scale either (a 46 R☉ supergiant, ~3×10⁷ km, is still sub-pixel at this range). Only the DIRECTION and the stated distance are measured; the drawn radius and radial position are the approximation.",
+        "tier": "derived-simplification",
+        "correction_path": "Use the rung-7 'distance-ladder view' toggle: on the log axis δ Cephei lands at ~6555 scene units — beyond Proxima's ~5162, still 91,000× inside the far plane — so BOTH stars and the whole solar system share one frame and the ladder visibly reaches further out with each rung. The DEFAULT linear view leaves it on the shell (this approximation stands there)."
+      }
+    ]
+  },
   "_epoch": {
     "name": "Epoch",
     "provenance": {

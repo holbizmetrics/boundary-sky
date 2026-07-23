@@ -116,3 +116,18 @@ Known residuals, named on purpose (see `data/bodies.json` →
    self-check asserts the map stays monotonic and every body lands inside the
    far plane; verified headless over all 22 bodies (visual check awaits an
    operator's eyeball — no browser on the build host).
+8. **The ladder's second rung** (2026-07-24) — a second star, chosen to
+   *climb* the ladder rather than repeat rung 1: **δ Cephei**, the prototype
+   Cepheid variable and the most important single star in the history of
+   measuring the universe. Its period–luminosity law (Leavitt, 1908–12) is
+   **rung 2** of the cosmic distance ladder — the first rung that reaches
+   *beyond* parallax range, out to other galaxies (Hubble used it on
+   Andromeda). The honest subtlety, spelled out in its provenance: δ Cephei's
+   *own* distance here is still rung 1 — HST parallax (3.66 mas → 890 ly),
+   not the P–L law, because you *calibrate* the law with the parallax, you
+   don't measure this star from it (that would be circular). So this one star
+   is exactly where rung 2 bolts onto rung 1. At 8.4×10¹⁵ km it is 210×
+   Proxima's distance — invisible before rung 7, but on the log ladder it
+   sits at ~6555 units, just outside Proxima (~5162): the ladder visibly
+   reaching further with each rung, rungs 0-1-2 now in one sky. Data-driven
+   (no new render code); ladder self-check re-run over all 23 bodies, PASS.
