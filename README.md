@@ -129,5 +129,13 @@ Known residuals, named on purpose (see `data/bodies.json` →
    is exactly where rung 2 bolts onto rung 1. At 8.4×10¹⁵ km it is 210×
    Proxima's distance — invisible before rung 7, but on the log ladder it
    sits at ~6555 units, just outside Proxima (~5162): the ladder visibly
-   reaching further with each rung, rungs 0-1-2 now in one sky. Data-driven
-   (no new render code); ladder self-check re-run over all 23 bodies, PASS.
+   reaching further with each rung, rungs 0-1-2 now in one sky. Ladder
+   self-check re-run over all 23 bodies, PASS.
+   **The star now breathes:** its marker pulses on the measured 5.366-day
+   period between magnitude 3.48 and 4.37, with the characteristic Cepheid
+   fast-rise / slow-decline light curve (the asymmetry is itself a measured
+   signature; the exact profile is a labeled `derived-simplification`). The
+   pulsation *is* the standard candle — Leavitt's law reads this very period
+   to fix the luminosity — so watching it pulse is watching rung 2 work. A
+   live magnitude readout in the HUD shows the current value; a load-time
+   self-check confirms the curve hits the measured extremes exactly.

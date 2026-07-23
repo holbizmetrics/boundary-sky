@@ -602,6 +602,14 @@
       "distance_ly": 890.0,
       "distance_km": 8430800000000000.0
     },
+    "pulsation": {
+      "type": "classical Cepheid",
+      "period_days": 5.366249,
+      "mag_bright": 3.48,
+      "mag_faint": 4.37,
+      "tier": "measured",
+      "note": "The star physically pulsates: it swells and shrinks every 5.366249 days, and its apparent brightness rides with it between visual magnitude 3.48 (brightest) and 4.37 (faintest). The PERIOD and the magnitude range are measured (this is exactly the period Leavitt's law reads to fix the star's luminosity — the pulsation IS the standard candle). What is a derived-simplification is the light-curve SHAPE the renderer draws it with: a fast-rise / slow-decline sawtooth (rise fraction 0.25). Real Cepheid curves are asymmetric that way — the asymmetry is a genuine measured signature — but the exact profile is star-specific and here approximated by a piecewise ramp, not fitted photometry. The marker's brightness and size are driven by flux = 10^(−0.4·Δmag) from this curve."
+    },
     "provenance": {
       "tier": "measured",
       "source": "HST Fine Guidance Sensor parallax 3.66±0.10 mas → 273±7 pc / 890±20 ly (Benedict et al. 2002); RA/Dec J2000; radius 46.1 R☉, Teff 5905 K, spectral F5Ib–G1Ib, pulsation period 5.366249 d, apparent mag 3.48–4.37 (Cepheus)",
