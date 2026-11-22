@@ -60,6 +60,8 @@
   <label>camera rides with<select id="focus-select"></select>
     <button id="reset-view" style="margin-left:6px;background:#16202e;color:#e8eef6;
       border:1px solid #2a3a52;border-radius:4px;padding:2px 8px;cursor:pointer">reset view</button>
+    <button id="tour-again" style="margin-left:6px;background:#16202e;color:#e8eef6;
+      border:1px solid #2a3a52;border-radius:4px;padding:2px 8px;cursor:pointer">show tour again</button>
   </label>
   <label>
     <input type="checkbox" id="scale-toggle">
@@ -551,6 +553,16 @@ let timePaused = false;
     try { localStorage.setItem(KEY, '1'); } catch (e) { /* storage blocked: nothing to remember */ }
   };
   let step = 0;
+  // The tour used to be reachable again only through ?intro, which nobody can find
+  // (operator, 2026-11-22: "I couldn't find it"). The panel button restarts it from
+  // the first question, with x20 switched back off so that question still works.
+  const first = { text: text.innerHTML, next: next.textContent };
+  const restart = () => {
+    const t = document.getElementById('scale-toggle');
+    if (t.checked) { t.checked = false; t.dispatchEvent(new Event('change')); }
+    text.innerHTML = first.text; next.textContent = first.next; skip.hidden = false;
+    step = 0; card.hidden = false; timePaused = true; place();
+  };
   next.addEventListener('click', () => {
     if (step === 0) {
       const t = document.getElementById('scale-toggle');
@@ -599,6 +611,7 @@ let timePaused = false;
   if (window.ResizeObserver) new ResizeObserver(place).observe(clockLine);
   addEventListener('resize', place);
   if (!seen || forced) { card.hidden = false; timePaused = true; place(); }
+  document.getElementById('tour-again').addEventListener('click', restart);
 }
 
 // ---- animate ------------------------------------------------------------
