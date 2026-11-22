@@ -31,11 +31,32 @@
   #clock { position: fixed; bottom: 10px; left: 10px; right: 10px; color: #8fa1b8;
            font-size: 12px; background: rgba(10,14,22,0.7); padding: 4px 8px;
            border-radius: 6px; }
+  /* collapsible panel: on a phone the full HUD covers about half the screen */
+  #hud-toggle { min-width: 40px; min-height: 36px; margin-right: 6px; font-size: 18px; line-height: 1;
+                background: #16202e; color: #e8eef6; border: 1px solid #2a3a52; border-radius: 6px;
+                cursor: pointer; vertical-align: middle; }
+  #hud.collapsed { padding: 6px 8px; }
+  #hud.collapsed #hud-body, #hud.collapsed h1 .note { display: none; }
+  #hud.collapsed h1 { margin: 0; }
+  /* first-minute invitation: one question, then the switch, then "what changed?" */
+  #invite { position: fixed; left: 50%; transform: translateX(-50%); bottom: 46px;
+            width: min(92vw, 380px); box-sizing: border-box;
+            background: rgba(14, 22, 36, 0.94); color: #e8eef6;
+            border: 1px solid #4a6a92; border-radius: 10px; padding: 12px 14px;
+            font-size: 14px; line-height: 1.45; box-shadow: 0 4px 18px rgba(0,0,0,0.5); }
+  #invite[hidden] { display: none; }
+  #invite p { margin: 0 0 10px; }
+  #invite .row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+  #invite button { min-height: 40px; padding: 8px 14px; border-radius: 6px; font-size: 14px;
+                   cursor: pointer; border: 1px solid #4a6a92; background: #16202e; color: #e8eef6; }
+  #invite button.primary { background: #2a4a72; border-color: #6a92c2; }
 </style>
 </head>
 <body>
 <div id="hud">
-  <h1>boundary-sky <span class="note">rung 8 — the ladder's second rung (δ Cephei)</span></h1>
+  <h1><button id="hud-toggle" aria-controls="hud-body" aria-expanded="true"
+       title="show or hide the controls">☰</button>boundary-sky <span class="note">rung 8 — the ladder's second rung (δ Cephei)</span></h1>
+  <div id="hud-body">
   <label>camera rides with<select id="focus-select"></select>
     <button id="reset-view" style="margin-left:6px;background:#16202e;color:#e8eef6;
       border:1px solid #2a3a52;border-radius:4px;padding:2px 8px;cursor:pointer">reset view</button>
@@ -68,8 +89,18 @@
       Corrections are appended to <code>provenance-log.jsonl</code>, never erased.
     </div>
   </details>
+  </div>
 </div>
 <div id="clock"></div>
+<div id="invite" hidden>
+  <p id="invite-text">At true scale, how far away do you think the Moon is?
+    Take a guess, then look at the <b>Earth–Moon</b> number at the bottom.
+    (Time is paused while you look.)</p>
+  <div class="row">
+    <button id="invite-skip">skip</button>
+    <button id="invite-next" class="primary">Now switch on radii ×20</button>
+  </div>
+</div>
 
 <script type="importmap">
 { "imports": {
@@ -473,13 +504,87 @@ document.getElementById('reset-view').addEventListener('click', () => {
   firstFrame = true; // same re-seat, current focus — back to default framing
 });
 
+// ---- collapsible panel ------------------------------------------------------
+// On a phone the full panel covers about half the screen, so it starts folded on
+// narrow screens (<= 600 px) and open on wide ones; the visitor's own choice wins
+// and is remembered (storage optional, so blocked storage just means the default).
+{
+  const KEY = 'boundary-sky.hud.collapsed';
+  const hud = document.getElementById('hud');
+  const btn = document.getElementById('hud-toggle');
+  let stored = null;
+  try { stored = localStorage.getItem(KEY); } catch (e) { /* storage blocked: use the default */ }
+  const set = (collapsed, remember) => {
+    hud.classList.toggle('collapsed', collapsed);
+    btn.setAttribute('aria-expanded', String(!collapsed));
+    if (remember) try { localStorage.setItem(KEY, collapsed ? '1' : '0'); } catch (e) { /* not remembered */ }
+  };
+  set(stored === null ? innerWidth <= 600 : stored === '1', false);
+  btn.addEventListener('click', () => set(!hud.classList.contains('collapsed'), true));
+}
+
+// ---- first-minute invitation (Astra's review, 2026-11-22) ----------------
+// One question before any explanation: guess the Moon's distance, then flip
+// radii ×20 yourself and notice that the bodies grow while the Earth–Moon
+// number stays put. Once someone has seen that, the provenance labels answer a
+// question they already have. Shown once per browser; `?intro` shows it again.
+// Storage can be blocked (private mode, previews), so it is optional: without
+// it the invitation simply shows on every visit.
+// TIME IS PAUSED while the card is open: at 1 s = 1 day the Moon's elliptical
+// orbit moves the Earth–Moon number all the time, so "did it move?" would show a
+// learner a changing number that the ×20 switch did not cause.
+let timePaused = false;
+{
+  const KEY = 'boundary-sky.invite.seen';
+  const card = document.getElementById('invite');
+  const text = document.getElementById('invite-text');
+  const next = document.getElementById('invite-next');
+  const skip = document.getElementById('invite-skip');
+  let seen = false;
+  try { seen = localStorage.getItem(KEY) === '1'; } catch (e) { /* storage blocked: show it */ }
+  const forced = new URLSearchParams(location.search).has('intro');
+  const done = () => {
+    card.hidden = true;
+    timePaused = false;
+    try { localStorage.setItem(KEY, '1'); } catch (e) { /* storage blocked: nothing to remember */ }
+  };
+  let step = 0;
+  next.addEventListener('click', () => {
+    if (step === 0) {
+      const t = document.getElementById('scale-toggle');
+      if (!t.checked) { t.checked = true; t.dispatchEvent(new Event('change')); }
+      text.innerHTML = 'The bodies just grew 20 times. Now look at the <b>Earth–Moon</b> ' +
+        'number at the bottom again: did it move?';
+      next.textContent = 'What changed?';
+      step = 1;
+    } else if (step === 1) {
+      text.innerHTML = 'Only the sizes changed. The distance is <b>measured</b>; the ×20 is a ' +
+        '<b>labeled lie</b> that makes tiny worlds visible. Every body tells you which of its ' +
+        'numbers are measured and what the renderer changed: tap ☰, then <i>provenance</i>.';
+      next.textContent = 'Got it';
+      skip.hidden = true;
+      step = 2;
+    } else done();
+  });
+  skip.addEventListener('click', done);
+  // Sit ABOVE the clock line, never on it: on a phone the clock wraps to several
+  // lines, and a fixed offset put the card exactly over the Earth–Moon number it
+  // asks the visitor to look at (caught in a 360x760 screenshot, 2026-11-22).
+  const clockLine = document.getElementById('clock');
+  const place = () => { card.style.bottom = (clockLine.offsetHeight + 18) + 'px'; };
+  if (window.ResizeObserver) new ResizeObserver(place).observe(clockLine);
+  addEventListener('resize', place);
+  if (!seen || forced) { card.hidden = false; timePaused = true; place(); }
+}
+
 // ---- animate ------------------------------------------------------------
 const clockEl = document.getElementById('clock');
 const clock = new THREE.Clock();
 let simDays = 0;
 
 renderer.setAnimationLoop(() => {
-  simDays += clock.getDelta() * SIM_DAYS_PER_SECOND;
+  const dt = clock.getDelta();                         // always consumed: no jump on resume
+  if (!timePaused) simDays += dt * SIM_DAYS_PER_SECOND; // paused while the invitation is open
   posCache.clear();
 
   for (const [key, s] of Object.entries(sys)) {
