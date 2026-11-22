@@ -370,6 +370,24 @@ function bodyPosKm(key, simDays) {
   return p;
 }
 
+// ---- decidable self-check for the STARFIELD NOTE: it must name every star --
+// The note said "exactly ONE real star" (Proxima) and stayed that way after
+// δ Cephei arrived at rung 8 -- found by an outside review. Words that count the
+// sky rot when the sky grows, so the data now checks its own label: every body
+// drawn as a real star must be named in the decorative starfield's note.
+{
+  const note = (bodies._starfield && bodies._starfield.provenance &&
+                bodies._starfield.provenance.note) || '';
+  const stars = Object.values(sys).filter(s => s.star).map(s => s.data.name);
+  const missing = stars.filter(n => !note.includes(n));
+  const starNotePass = stars.length > 0 && missing.length === 0;
+  console.log('[boundary-sky starfield]',
+    `self-check ${starNotePass ? 'PASS' : 'FAIL'} — ${stars.length} real star(s) ` +
+    `drawn (${stars.join(', ')}); ` +
+    (missing.length ? `NOT named in the starfield note: ${missing.join(', ')}`
+                    : 'all named in the starfield note'));
+}
+
 // ---- decidable self-check for the LADDER: log-radius must be monotonic ---
 // and every body must land INSIDE the far clip plane (the whole point: the
 // linear sky can't, the log sky must). Runs once at load; a distorting view
