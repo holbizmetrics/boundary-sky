@@ -43,6 +43,13 @@ python -m http.server 8138
 One codebase, four targets: Three.js on WebGL2 — Android phone, Android tablet,
 Linux, Windows. No installs. (WebGPU deliberately avoided: not yet everywhere.)
 
+**The first minute.** A first visit opens with one question instead of an explanation:
+*how far away is the Moon?* The visitor flips **radii ×20** themselves and sees the
+bodies grow while the Earth–Moon number stays put. Time is **paused** while the card is
+open, because at 1 s = 1 day the Moon's elliptical orbit would move that number on its
+own and fake the answer. Shown once per browser; add `?intro` to the URL to see it again.
+(From Astra's review, 2026-11-22.)
+
 ## What v0 is
 
 Earth and Moon. **True scale by default** — the Moon is far, and everyone's
