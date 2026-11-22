@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>boundary-sky — the app's Moon vs the real Moon</title>
+<style>
+  html, body { margin: 0; background: #000; color: #cfd8e3;
+               font-family: system-ui, sans-serif; font-size: 15px; line-height: 1.45; }
+  main { max-width: 640px; margin: 0 auto; padding: 12px 16px 40px; }
+  h1 { font-size: 18px; color: #e8eef6; margin: 6px 0 8px; }
+  a { color: #9fc1e8; }
+  .note { color: #8fa1b8; font-size: 12.5px; }
+  .box { background: rgba(10,14,22,0.9); border: 1px solid #2a3a52; border-radius: 8px;
+         padding: 10px 12px; margin: 12px 0; }
+  svg { display: block; width: 100%; height: auto; background: #03060c;
+        border: 1px solid #1c2738; border-radius: 6px; }
+  .app { color: #ffb05c; } .real { color: #e8eef6; }
+  input[type=range] { width: 100%; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  button { min-height: 44px; padding: 8px 12px; border-radius: 6px; font-size: 14.5px; cursor: pointer;
+           background: #16202e; color: #e8eef6; border: 1px solid #2a3a52; flex: 1 1 140px; }
+  button[disabled] { opacity: 0.45; cursor: default; }
+  button.picked { outline: 2px solid #e8eef6; opacity: 1; }
+  #reveal[hidden] { display: none; }
+  .verdict { color: #e8eef6; font-size: 15.5px; }
+</style>
+</head>
+<body>
+<main>
+<p class="note"><a href="index.html">← back to the 3D sky</a></p>
+<h1>The app's Moon vs the real Moon</h1>
+
+<p>The Moon in this sky follows a perfect ellipse that never changes: same shape, same tilt,
+forever. The real Moon is also pulled by the Sun, so its orbit stretches, wobbles and turns.</p>
+<p>On <b>1 January 2000</b> both Moons start at the same place in the sky. The app's ellipse uses
+orbital elements valid for exactly that date, so this is its best day.</p>
+
+<div class="box">
+  <div class="verdict">When will the app's Moon first be off by more than its own width
+  (half a degree)?</div>
+  <div class="row">
+    <button data-days="1">Within a day</button>
+    <button data-days="14">Within two weeks</button>
+    <button data-days="120">Within a few months</button>
+    <button data-days="1000">Only after years</button>
+    <button data-days="-1">Never: an ellipse is good enough</button>
+  </div>
+</div>
+
+<div id="reveal" hidden>
+  <div class="box">
+    <div class="verdict" id="verdict"></div>
+    <svg id="chart" viewBox="0 0 330 200" aria-label="angle between the two Moons over the year 2000"></svg>
+    <p class="note">How far apart the two Moons are in the sky, every 6 hours through 2000.
+      Dashed line: one Moon width.</p>
+  </div>
+  <div class="box">
+    <label for="scrub">Date: <b id="date"></b></label>
+    <input id="scrub" type="range" min="0" value="0">
+    <svg id="view" viewBox="0 0 330 230" aria-label="view from Earth: both Moons at true size"></svg>
+    <p class="note" id="readout"></p>
+  </div>
+  <div class="box" id="why"></div>
+  <div class="box note" id="sources"></div>
+</div>
+<p class="note" id="selfcheck"></p>
+</main>
+
+<script type="module">
+// The app's Moon is computed HERE by the app's own code (orbit.js + data/bodies.json), the
+// same functions the 3D sky uses. The real Moon is JPL's (data/moon-reference.json).
+import { makeOrbit, orbitAt } from './orbit.js';
+const R = Math.PI / 180, MOON_DEG = 0.5;
+const lonlat = p => [(Math.atan2(p.z, p.x) / R + 360) % 360, Math.asin(p.y / p.r) / R, p.r]; // scene -> ecliptic
+const sepDeg = (a, b) => { const [l1, b1, l2, b2] = [a[0] * R, a[1] * R, b[0] * R, b[1] * R];
+  const h = Math.sin((b2 - b1) / 2) ** 2 + Math.cos(b1) * Math.cos(b2) * Math.sin((l2 - l1) / 2) ** 2;
+  return 2 * Math.asin(Math.min(1, Math.sqrt(h))) / R; };
+const NS = 'http://www.w3.org/2000/svg';
+const el = (svg, tag, attrs, text) => { const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; svg.appendChild(e); return e; };
+const dateOf = d => { const t = new Date(Date.UTC(2000, 0, 1, 12) + d * 864e5);
+  return t.toISOString().slice(0, 10) + ' ' + t.toISOString().slice(11, 16) + ' TT'; };
+const fmtDay = d => `day ${+d.toFixed(2)} (${dateOf(d).slice(0, 10)})`;
+
+Promise.all([fetch('data/bodies.json').then(r => r.json()), fetch('data/moon-reference.json').then(r => r.json())])
+.then(([B, REF]) => {
+  const rows = REF.rows, S = REF._source;
+  // The app's Moon with ONE thing set: its mean anomaly at day 0, chosen so its longitude
+  // matches JPL's on 2000-01-01 12:00 TT. Everything else is the app's own data.
+  const orb = makeOrbit(B.moon.orbit);
+  let best = [1e9, 0];
+  for (let k = 0; k < 36000; k++) {
+    orb.M0 = k / 36000 * 2 * Math.PI;
+    const d = Math.abs(((lonlat(orbitAt(orb, 0))[0] - rows[0][1]) + 540) % 360 - 180);
+    if (d < best[0]) best = [d, orb.M0];
+  }
+  orb.M0 = best[1];
+  const series = rows.map(r => { const m = lonlat(orbitAt(orb, r[0]));
+    return { day: r[0], app: m, real: r.slice(1, 3), dApp: m[2], dReal: r[3], sep: sepDeg(m, r.slice(1, 3)) }; });
+  const firstOver = (series.find(s => s.sep > MOON_DEG) || {}).day;
+  const worst = series.reduce((a, s) => s.sep > a.sep ? s : a);
+  const dErr = series.map(s => s.dApp - s.dReal), dMin = Math.min(...dErr), dMax = Math.max(...dErr);
+
+  // ---------- the guess ----------
+  const buttons = [...document.querySelectorAll('button[data-days]')];
+  buttons.forEach(b => b.addEventListener('click', () => {
+    buttons.forEach(o => { o.disabled = true; }); b.classList.add('picked');
+    reveal(+b.dataset.days, b.textContent);
+  }));
+
+  function reveal(guess, label) {
+    const right = guess === 14 && firstOver <= 14 && firstOver > 1;
+    document.getElementById('verdict').innerHTML =
+      `${right ? 'Right.' : `You said “${label}”.`} The app's Moon was first more than its own width away on
+       <b>${fmtDay(firstOver)}</b>, after ${firstOver.toFixed(1)} days. It does not just drift off: it comes
+       back close, then wanders away again, as far as <b>${worst.sep.toFixed(1)}°</b> (about
+       ${Math.round(worst.sep / MOON_DEG)} Moon widths) on ${fmtDay(worst.day)}.`;
+    drawChart();
+    const R2 = document.getElementById('reveal'); R2.hidden = false;
+    R2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const sc = document.getElementById('scrub'); sc.max = series.length - 1;
+    sc.value = series.indexOf(worst); sc.addEventListener('input', () => drawView(+sc.value)); drawView(+sc.value);
+    document.getElementById('why').innerHTML = `<b>Why.</b> The app's ellipse holds its tilt and its long
+      axis fixed. The real ones turn: the line where the orbit crosses the ecliptic goes round once in about
+      18.6 years, and the long axis once in about 8.85 years (both in this app's own data note). On top of
+      that, the Sun's pull stretches and squeezes the orbit within each month. A fixed ellipse cannot follow
+      any of it, so it is right on its start date and wrong by whole degrees within months.
+      <br><br><b>The same ellipse makes the Earth–Moon number</b> on the main page: through 2000 it would
+      have been off by ${Math.round(dMin).toLocaleString('en')} to +${Math.round(dMax).toLocaleString('en')} km
+      (up to ${(Math.max(-dMin, dMax) / 384400 * 100).toFixed(0)}%). That number is <i>calculated</i>,
+      and this is how good the calculation is.`;
+    document.getElementById('sources').innerHTML = `<b>Sources.</b> Real Moon: JPL Horizons (DE441), geocentric,
+      ecliptic of J2000, every 6 h. Checked against a second, independent source (astropy's moon98 series):
+      they agree within 10.9″ all year. App Moon: this site's own <code>orbit.js</code> with the Moon's elements
+      from <code>data/bodies.json</code>; the only thing set for this test is where on its ellipse it starts.
+      Raw data: <a href="data/moon-reference.json">moon-reference.json</a>.`;
+  }
+
+  function drawChart() {
+    const svg = document.getElementById('chart'), W = 330, H = 200, pl = 30, pr = 8, pt = 10, pb = 24;
+    const ymax = Math.ceil(worst.sep), x = d => pl + d / 365 * (W - pl - pr), y = v => pt + (1 - v / ymax) * (H - pt - pb);
+    for (let v = 0; v <= ymax; v++) { el(svg, 'line', { x1: pl, x2: W - pr, y1: y(v), y2: y(v), stroke: '#152033' });
+      el(svg, 'text', { x: 4, y: y(v) + 4, fill: '#5d6f88', 'font-size': 10 }, v + '°'); }
+    ['Jan', 'Apr', 'Jul', 'Oct'].forEach((m, i) => el(svg, 'text', { x: x(i * 91) , y: H - 8, fill: '#5d6f88', 'font-size': 10 }, m));
+    el(svg, 'line', { x1: pl, x2: W - pr, y1: y(MOON_DEG), y2: y(MOON_DEG), stroke: '#8fa1b8', 'stroke-dasharray': '4 4' });
+    el(svg, 'polyline', { points: series.map(s => `${x(s.day).toFixed(1)},${y(s.sep).toFixed(1)}`).join(' '),
+      fill: 'none', stroke: '#ffb05c', 'stroke-width': 1.3 });
+    el(svg, 'circle', { cx: x(firstOver), cy: y(MOON_DEG), r: 4, fill: '#e8eef6' });
+    el(svg, 'text', { x: x(firstOver) + 6, y: y(MOON_DEG) - 6, fill: '#e8eef6', 'font-size': 10 }, `day ${firstOver}`);
+    el(svg, 'circle', { cx: x(worst.day), cy: y(worst.sep), r: 4, fill: '#ffb05c' });
+  }
+
+  // View from Earth: both Moons as discs at TRUE angular size, centred on the real one.
+  function drawView(i) {
+    const s = series[i], svg = document.getElementById('view');
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    const half = Math.max(1.2, s.sep * 1.4), k = 110 / half, cx = 165, cy = 115;
+    const cosb = Math.cos(s.real[1] * R);
+    const dx = -(((s.app[0] - s.real[0] + 540) % 360) - 180) * cosb, dy = s.app[1] - s.real[1]; // east on the left
+    const rad = d => Math.atan(1737.4 / d) / R * k;                     // true angular radius
+    el(svg, 'circle', { cx, cy, r: rad(s.dReal), fill: '#d8d4cc' });
+    el(svg, 'circle', { cx: cx + dx * k, cy: cy - dy * k, r: rad(s.dApp), fill: 'none', stroke: '#ffb05c', 'stroke-width': 2 });
+    el(svg, 'text', { x: 6, y: 16, fill: '#e8eef6', 'font-size': 11 }, 'filled: real Moon');
+    el(svg, 'text', { x: 6, y: 30, fill: '#ffb05c', 'font-size': 11 }, 'ring: the app\'s Moon');
+    el(svg, 'text', { x: 6, y: 224, fill: '#5d6f88', 'font-size': 10 }, `box: ${(half * 2).toFixed(1)}° wide`);
+    document.getElementById('date').textContent = dateOf(s.day);
+    document.getElementById('readout').textContent =
+      `${s.sep.toFixed(2)}° apart (${(s.sep / MOON_DEG).toFixed(1)} Moon widths). Distance: app ` +
+      `${Math.round(s.dApp).toLocaleString('en')} km, real ${Math.round(s.dReal).toLocaleString('en')} km.`;
+  }
+
+  // ---------- self-checks: each can fail ----------
+  const E = S.expected_by_build_run, out = [];
+  const start = series[0].sep;
+  out.push(`start: both Moons within 0.2° on day 0 (${start.toFixed(2)}°): ${start < 0.2 ? 'PASS' : 'FAIL'}`);
+  const same = Math.abs(firstOver - E.first_day_over_half_degree) < 0.01 && Math.abs(worst.sep - E.worst_deg) < 0.01;
+  out.push(`this page's result equals the build run's (day ${E.first_day_over_half_degree}, ${E.worst_deg}°): ${same ? 'PASS' : 'FAIL'}`);
+  const okRows = rows.length === 1461 && rows.every((r, j) => j === 0 || r[0] > rows[j - 1][0]);
+  out.push(`${rows.length} reference rows in time order: ${okRows ? 'PASS' : 'FAIL'}`);
+  const all = start < 0.2 && same && okRows;
+  console.log('[boundary-sky moon] ' + (all ? 'PASS' : 'FAIL') + ' — ' + out.join(' · '));
+  document.getElementById('selfcheck').textContent = 'self-check ' + (all ? 'PASS' : 'FAIL') + ': ' + out.join(' · ');
+}).catch(e => {
+  document.getElementById('selfcheck').textContent = 'Could not load the data: ' + e;
+  console.log('[boundary-sky moon] FAIL — data did not load: ' + e);
+});
+</script>
+</body>
+</html>
