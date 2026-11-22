@@ -28,6 +28,17 @@
   #hud summary { cursor: pointer; color: #9fc1e8; }
   #hud select { background: #16202e; color: #e8eef6; border: 1px solid #2a3a52;
                 border-radius: 4px; padding: 2px 4px; margin-left: 6px; }
+  /* body labels: HTML overlay, positioned each frame from the 3D positions */
+  #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  #labels .lbl { position: absolute; transform: translate(-5px, -50%); white-space: nowrap;
+                 font-size: 11px; color: #cfd8e3; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+  #labels .lbl::before { content: ''; display: inline-block; width: 6px; height: 6px;
+                 border: 1px solid #8fa1b8; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+  #labels .lbl.star { color: #f0c8b8; }
+  #labels .lbl.conj { color: #f0a7c0; font-style: italic; }
+  #scale-hint { position: fixed; left: 10px; right: 10px; color: #cfd8e3; font-size: 12px;
+                background: rgba(10,14,22,0.75); padding: 4px 8px; border-radius: 6px; }
+  #scale-hint[hidden] { display: none; }
   #clock { position: fixed; bottom: 10px; left: 10px; right: 10px; color: #8fa1b8;
            font-size: 12px; background: rgba(10,14,22,0.7); padding: 4px 8px;
            border-radius: 6px; }
@@ -79,6 +90,13 @@
     Proxima share one frame — the scale chasm as a readable structure. Direction
     stays real; orbit shapes are hidden because a log radius distorts them.</div>
   </label>
+  <label>
+    <input type="checkbox" id="labels-toggle" checked>
+    labels
+    <div class="note">Names at each body's real position, with a small ring there, so a planet
+    smaller than a pixel still shows where it is. Moons are named when the camera rides with
+    their planet.</div>
+  </label>
   <details>
     <summary>provenance (every body declares itself)</summary>
     <div id="bodies-panel">loading data/bodies.json…</div>
@@ -95,6 +113,8 @@
   </details>
   </div>
 </div>
+<div id="labels"></div>
+<div id="scale-hint" hidden>The planets are on these orbits, but smaller than a pixel here. Switch on <b>radii ×20</b> (☰) to see them.</div>
 <div id="clock"></div>
 <div id="invite" hidden>
   <p id="invite-text">At true scale, how far away do you think the Moon is?
@@ -625,6 +645,62 @@ let timePaused = false;
   document.getElementById('tour-again').addEventListener('click', restart);
 }
 
+// ---- body labels + true-scale hint (S10 review, 2026-11-22) ---------------
+// At true scale the planets are far smaller than a pixel, so the screen showed orbit
+// rings and nothing on them, and two unexplained squares in the ladder view. Labels
+// sit at each body's real projected position. Priority decides who stays when two
+// labels would overlap: the followed body, the stars, the Sun, planets, the rest.
+const labelLayer = document.getElementById('labels');
+const scaleHint = document.getElementById('scale-hint');
+const labelsToggle = document.getElementById('labels-toggle');
+const labelEls = {};
+const LABEL_PRIORITY = key => {
+  const d = sys[key].data, parent = sys[key].el ? sys[key].el.parent : null;
+  if (key === focusKey) return 0;
+  if (sys[key].star) return 1;
+  if (key === 'sun') return 2;
+  if (d.provenance && d.provenance.tier === 'conjectured') return 5;
+  if (parent === 'sun') return d.radius_km > 1500 ? 3 : 4;   // planets before Ceres/comets
+  return 6;                                                    // moons
+};
+function labelWanted(key) {
+  const s = sys[key];
+  if (s.star || key === 'sun') return true;
+  const parent = s.el ? s.el.parent : null;
+  if (parent === 'sun') return true;
+  return parent === focusKey || key === focusKey;              // moons of the followed body
+}
+const _v = new THREE.Vector3();
+function updateLabels() {
+  scaleHint.hidden = ladderMode || scaleToggleK !== 1 ||
+    !document.getElementById('invite').hidden;               // never on top of the tour card
+  if (!scaleHint.hidden) scaleHint.style.bottom = (document.getElementById('clock').offsetHeight + 16) + 'px';
+  const on = labelsToggle.checked;
+  labelLayer.style.display = on ? '' : 'none';
+  if (!on) return;
+  const keys = Object.keys(sys).filter(labelWanted).sort((a, b) => LABEL_PRIORITY(a) - LABEL_PRIORITY(b));
+  const placed = [], W = innerWidth, H = innerHeight, why = {};
+  for (const key of Object.keys(labelEls)) labelEls[key].style.display = 'none';
+  for (const key of keys) {
+    sys[key].mesh.getWorldPosition(_v); _v.project(camera);
+    if (_v.z > 1 || _v.z < -1) { why[key] = 'behind camera'; continue; }
+    const x = (_v.x + 1) / 2 * W, y = (1 - _v.y) / 2 * H;
+    if (x < 0 || x > W || y < 0 || y > H) { why[key] = 'off screen'; continue; }
+    if (placed.some(p => Math.abs(p[0] - x) < 60 && Math.abs(p[1] - y) < 13)) { why[key] = 'crowded out'; continue; }
+    placed.push([x, y]); why[key] = 'shown';
+    let e = labelEls[key];
+    if (!e) {
+      const d = sys[key].data, conj = d.provenance && d.provenance.tier === 'conjectured';
+      e = labelEls[key] = document.createElement('div');
+      e.className = 'lbl' + (sys[key].star ? ' star' : '') + (conj ? ' conj' : '');
+      e.textContent = d.name + (conj ? ' (conjectured)' : '');
+      labelLayer.appendChild(e);
+    }
+    e.style.left = x + 'px'; e.style.top = y + 'px'; e.style.display = '';
+  }
+  window.boundarySkyLabels = why;   // for tests: why each wanted label is or is not shown
+}
+
 // ---- animate ------------------------------------------------------------
 const clockEl = document.getElementById('clock');
 const clock = new THREE.Clock();
@@ -695,6 +771,7 @@ renderer.setAnimationLoop(() => {
 
   controls.update();
   renderer.render(scene, camera);
+  updateLabels();
 });
 
 addEventListener('resize', () => {
