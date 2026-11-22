@@ -641,7 +641,7 @@
     "name": "Starfield",
     "provenance": {
       "tier": "decorative",
-      "note": "random points for depth perception — NOT real star positions. As of rung 6 exactly ONE real star sits among them in its true direction: Proxima Centauri (a separate 'measured' object) — the boundary between scenery and sky, drawn on the same shell. Correction path: Hipparcos/Gaia bright-star catalog for the rest."
+      "note": "random points for depth perception — NOT real star positions. Real stars sit among them in their true directions, each a separate 'measured' object: Proxima Centauri (rung 6) and δ Cephei (rung 8) — the boundary between scenery and sky, drawn on the same shell. Every star in the data must be named here; a page-load self-check enforces it. Correction path: Hipparcos/Gaia bright-star catalog for the rest."
     }
   }
 }

@@ -65,8 +65,11 @@ Known residuals, named on purpose (see `data/bodies.json` →
   perihelion/aphelion is the mean-element residual, already visible and
   named); the epoch is arbitrary (`_epoch` label: sim day 0 = perihelion +
   perigee at once).
-- Starfield is random points (`decorative`) — **except one**: as of rung 6,
-  Proxima Centauri sits among them in its true direction, a `measured` star.
+- Starfield is random points (`decorative`) — **except the real stars**:
+  Proxima Centauri (rung 6) and δ Cephei (rung 8) sit among them in their true
+  directions, each a `measured` star. A page-load self-check fails if a star in
+  the data is missing from the starfield note (it said "exactly ONE" until
+  δ Cephei arrived; correction log entry 30).
 
 ## Roadmap rungs (base case before galaxy)
 
