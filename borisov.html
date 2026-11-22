@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>boundary-sky — 2I/Borisov: two predictions, one withheld observation</title>
+<style>
+  html, body { margin: 0; background: #000; color: #cfd8e3;
+               font-family: system-ui, sans-serif; font-size: 15px; line-height: 1.45; }
+  main { max-width: 640px; margin: 0 auto; padding: 12px 16px 40px; }
+  h1 { font-size: 18px; color: #e8eef6; margin: 6px 0 8px; }
+  a { color: #9fc1e8; }
+  .note { color: #8fa1b8; font-size: 12.5px; }
+  .box { background: rgba(10,14,22,0.9); border: 1px solid #2a3a52; border-radius: 8px;
+         padding: 10px 12px; margin: 12px 0; }
+  svg { display: block; width: 100%; height: auto; background: #03060c;
+        border: 1px solid #1c2738; border-radius: 6px; touch-action: pan-y; }
+  .p1 { color: #6fb6ff; } .p2 { color: #ffb05c; }
+  .key { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 4px; }
+  input[type=range] { width: 100%; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  button { min-height: 44px; padding: 8px 14px; border-radius: 6px; font-size: 15px; cursor: pointer;
+           background: #16202e; color: #e8eef6; border: 1px solid #2a3a52; flex: 1 1 140px; }
+  button.p1b { border-color: #6fb6ff; } button.p2b { border-color: #ffb05c; }
+  button[disabled] { opacity: 0.45; cursor: default; }
+  button.picked { outline: 2px solid #e8eef6; opacity: 1; }
+  #reveal[hidden] { display: none; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  td, th { text-align: left; padding: 4px 6px; border-bottom: 1px solid #1c2738; vertical-align: top; }
+  .verdict { color: #e8eef6; font-size: 15.5px; }
+</style>
+</head>
+<body>
+<main>
+<p class="note"><a href="index.html">← back to the 3D sky</a></p>
+<h1>2I/Borisov: two predictions, one withheld observation</h1>
+
+<p>In 2019 astronomers found a comet coming from another star. While it was still being tracked,
+they published two orbit predictions, a few weeks apart. Both pass through the early sightings
+(white dots). Each one says where the comet will be in <b>March 2020</b>.</p>
+<p>Which prediction do you trust? You will not see who made them, when, or with how much data
+until after you choose.</p>
+
+<div class="box">
+  <div><span class="key" style="background:#6fb6ff"></span><span class="p1">Prediction 1</span>
+       &nbsp; <span class="key" style="background:#ffb05c"></span><span class="p2">Prediction 2</span>
+       &nbsp; <span style="color:#fff">●</span> early sightings both used</div>
+  <svg id="sky" viewBox="0 0 330 420" aria-label="sky chart of both predicted paths"></svg>
+  <p class="note">View from Earth's centre. Grid: right ascension (left = east, as on the sky) and
+  declination. A rectangular chart: shapes stretch toward the bottom, where the path nears the south
+  celestial pole.</p>
+  <label for="scrub">Date: <b id="date"></b></label>
+  <input id="scrub" type="range" min="0" value="0">
+  <div class="note" id="gap"></div>
+</div>
+
+<div class="box">
+  <div class="verdict">Where will it be on 13 March 2020?</div>
+  <div class="row">
+    <button id="pick1" class="p1b">I trust Prediction 1</button>
+    <button id="pick2" class="p2b">I trust Prediction 2</button>
+    <button id="pick0">I can't tell yet</button>
+  </div>
+</div>
+
+<div id="reveal" hidden>
+  <div class="box">
+    <div class="verdict" id="verdict"></div>
+    <svg id="zoom" viewBox="0 0 330 330" aria-label="the March observation and both predictions"></svg>
+    <p class="note" id="zoomnote"></p>
+    <svg id="zoom2" viewBox="0 0 330 330" aria-label="close-up of the observation"></svg>
+    <p class="note" id="zoom2note"></p>
+  </div>
+  <div class="box">
+    <table id="who"></table>
+    <p class="note" id="why"></p>
+  </div>
+  <div class="box note" id="sources"></div>
+</div>
+<p class="note" id="selfcheck"></p>
+</main>
+
+<script>
+'use strict';
+// Every position on this page was computed by JPL Horizons or measured and reported to the
+// Minor Planet Center (see data/borisov-replay.json → _source). This page only draws them and
+// measures angles between them.
+const RAD = Math.PI / 180;
+function sepArcsec(a, b) {                       // great-circle angle, [ra,dec] in degrees
+  const [a1, d1, a2, d2] = [a[0] * RAD, a[1] * RAD, b[0] * RAD, b[1] * RAD];
+  const h = Math.sin((d2 - d1) / 2) ** 2 + Math.cos(d1) * Math.cos(d2) * Math.sin((a2 - a1) / 2) ** 2;
+  return 2 * Math.asin(Math.min(1, Math.sqrt(h))) / RAD * 3600;
+}
+function fmtAngle(s) {
+  if (s < 60) return s.toFixed(1) + '″';
+  if (s < 3600) return (s / 60).toFixed(1) + '′';
+  return (s / 3600).toFixed(2) + '°';
+}
+const MOON = 1865;                                // Moon's mean apparent diameter, arcsec (~31′)
+const moons = s => s / MOON < 0.01 ? `far too small to see by eye`
+                : s / MOON < 1 ? `about ${(s / MOON).toFixed(2)} of the Moon's width`
+                                : `about ${(s / MOON).toFixed(1)} Moon widths`;
+const NS = 'http://www.w3.org/2000/svg';
+function el(svg, tag, attrs, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  svg.appendChild(e); return e;
+}
+
+fetch('data/borisov-replay.json').then(r => r.json()).then(D => {
+  // Which fit is "Prediction 1" is shuffled on every visit, so the label carries no hint.
+  const order = Math.random() < 0.5 ? ['A', 'B'] : ['B', 'A'];
+  const COL = { 1: '#6fb6ff', 2: '#ffb05c' };
+  const fitOf = n => order[n - 1];
+  const P = D.paths, S = D._source;
+
+  // ---------- main chart: rectangular RA/Dec ----------
+  const sky = document.getElementById('sky');
+  const pts = [...P.A, ...P.B].map(p => [p[1], p[2]]).concat(D.shared.map(s => [s[1], s[2]]));
+  const raMin = Math.min(...pts.map(p => p[0])) - 3, raMax = Math.max(...pts.map(p => p[0])) + 3;
+  const deMin = Math.min(...pts.map(p => p[1])) - 3, deMax = Math.max(...pts.map(p => p[1])) + 3;
+  const W = 330, H = 420, pad = 26;
+  const x = ra => pad + (raMax - ra) / (raMax - raMin) * (W - 2 * pad);   // east on the left
+  const y = de => pad + (deMax - de) / (deMax - deMin) * (H - 2 * pad);
+  for (let de = Math.ceil(deMin / 20) * 20; de <= deMax; de += 20) {
+    el(sky, 'line', { x1: pad, x2: W - pad, y1: y(de), y2: y(de), stroke: '#152033' });
+    el(sky, 'text', { x: 2, y: y(de) + 4, fill: '#5d6f88', 'font-size': 10 }, (de > 0 ? '+' : '') + de + '°');
+  }
+  for (let ra = Math.ceil(raMin / 15) * 15; ra <= raMax; ra += 15) {
+    el(sky, 'line', { x1: x(ra), x2: x(ra), y1: pad, y2: H - pad, stroke: '#152033' });
+    el(sky, 'text', { x: x(ra) - 8, y: H - 8, fill: '#5d6f88', 'font-size': 10 }, (ra / 15) + 'h');
+  }
+  const poly = path => path.map(p => `${x(p[1]).toFixed(1)},${y(p[2]).toFixed(1)}`).join(' ');
+  for (const n of [1, 2])
+    el(sky, 'polyline', { points: poly(P[fitOf(n)]), fill: 'none', stroke: COL[n], 'stroke-width': 1.6, opacity: 0.9 });
+  for (const s of D.shared) el(sky, 'circle', { cx: x(s[1]), cy: y(s[2]), r: 2.2, fill: '#fff' });
+  const end = P.A.length - 1;
+  for (const n of [1, 2]) {
+    const p = P[fitOf(n)][end];
+    // Labels sit on whichever side has room, never past the chart's edge.
+    const lx = Math.min(Math.max(x(p[1]) + (n === 1 ? -70 : 6), 4), W - 74);
+    el(sky, 'text', { x: lx, y: y(p[2]) + (n === 1 ? -8 : 14), fill: COL[n], 'font-size': 11 }, 'Prediction ' + n);
+  }
+  const mk = { 1: el(sky, 'circle', { r: 4.5, fill: COL[1] }), 2: el(sky, 'circle', { r: 4.5, fill: 'none', stroke: COL[2], 'stroke-width': 2 }) };
+
+  const scrub = document.getElementById('scrub');
+  scrub.max = end;
+  const show = i => {
+    for (const n of [1, 2]) { const p = P[fitOf(n)][i]; mk[n].setAttribute('cx', x(p[1])); mk[n].setAttribute('cy', y(p[2])); }
+    document.getElementById('date').textContent = P.A[i][0];
+    const g = sepArcsec(P.A[i].slice(1), P.B[i].slice(1));
+    document.getElementById('gap').textContent =
+      `The two predictions are ${fmtAngle(g)} apart on this date (${moons(g)}). ` +
+      `A good telescope measures a position to about 1″.`;
+  };
+  scrub.addEventListener('input', () => show(+scrub.value));
+  show(0);
+
+  // ---------- the choice ----------
+  const buttons = ['pick0', 'pick1', 'pick2'].map(id => document.getElementById(id));
+  buttons.forEach(b => b.addEventListener('click', () => {
+    buttons.forEach(o => { o.disabled = true; });
+    b.classList.add('picked');
+    reveal(+b.id.slice(4));
+  }));
+
+  function reveal(pick) {
+    const M = D.march, miss = { A: sepArcsec(M.A, M.obs), B: sepArcsec(M.B, M.obs), J: sepArcsec(M.J, M.obs) };
+    const better = miss.A < miss.B ? 'A' : 'B', worse = better === 'A' ? 'B' : 'A';
+    const nOf = f => order.indexOf(f) + 1;
+    const name = f => `<span class="p${nOf(f)}">Prediction ${nOf(f)}</span>`;
+    let v;
+    if (pick === 0) v = `You said you can't tell yet, and on what this page showed you that was the honest
+      answer: both paths run through every white dot, so nothing visible separated them.
+      ${name(better)} missed by ${fmtAngle(miss[better])}, ${name(worse)} by ${fmtAngle(miss[worse])}.`;
+    else if (fitOf(pick) === better) v = `You trusted ${name(better)}, the closer one. It still missed
+      by ${fmtAngle(miss[better])}, ${moons(miss[better])}. ${name(worse)} missed by ${fmtAngle(miss[worse])}.`;
+    else v = `You trusted ${name(worse)}. It missed by ${fmtAngle(miss[worse])}, ${moons(miss[worse])}.
+      ${name(better)} missed by ${fmtAngle(miss[better])}.`;
+    document.getElementById('verdict').innerHTML = v;
+    const R = document.getElementById('reveal'); R.hidden = false;
+    R.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Zoom 1: tangent-plane around the observation, wide enough to hold both predictions.
+    const c = M.obs, cosd = Math.cos(c[1] * RAD);
+    const tp = p => [-(p[0] - c[0]) * cosd * 60, (p[1] - c[1]) * 60];       // arcmin, east left
+    const drawZoom = (svg, halfArcmin, labels) => {
+      const k = 150 / halfArcmin, X = a => 165 + a * k, Y = d => 165 - d * k;
+      el(svg, 'rect', { x: 0, y: 0, width: 330, height: 330, fill: '#03060c' });
+      const ring = (s, label) => {               // Moon-sized circle for scale, when it fits
+        el(svg, 'circle', { cx: 165, cy: 165, r: s / 60 * k, fill: 'none', stroke: '#24324a', 'stroke-dasharray': '3 4' });
+        el(svg, 'text', { x: 165 - 44, y: 165 + s / 60 * k + 24, fill: '#5d6f88', 'font-size': 10 }, label);
+      };
+      if (MOON / 2 / 60 < halfArcmin) ring(MOON / 2, 'Moon-sized circle');
+      for (const f of ['A', 'B']) {
+        const [a, d] = tp(M[f]), n = nOf(f);
+        if (Math.abs(a) > halfArcmin * 1.05 || Math.abs(d) > halfArcmin * 1.05) continue;
+        el(svg, 'line', { x1: 165, y1: 165, x2: X(a), y2: Y(d), stroke: COL[n], 'stroke-dasharray': '2 3', opacity: 0.7 });
+        el(svg, 'circle', { cx: X(a), cy: Y(d), r: 6, fill: n === 1 ? COL[1] : 'none', stroke: COL[n], 'stroke-width': 2 });
+        if (labels) el(svg, 'text', { x: X(a) + 9, y: Y(d) + 4, fill: COL[n], 'font-size': 11 }, `P${n}: ${fmtAngle(miss[f])} off`);
+      }
+      el(svg, 'path', { d: 'M165 157 L167 163 L173 165 L167 167 L165 173 L163 167 L157 165 L163 163 Z', fill: '#fff' });
+      el(svg, 'text', { x: 172, y: 182, fill: '#fff', 'font-size': 11 }, 'where it really was');
+      el(svg, 'text', { x: 6, y: 322, fill: '#5d6f88', 'font-size': 10 }, `box: ${fmtAngle(halfArcmin * 120)} wide`);
+    };
+    const far = Math.max(...['A', 'B'].map(f => Math.max(...tp(M[f]).map(Math.abs))));
+    drawZoom(document.getElementById('zoom'), far * 1.25, true);
+    document.getElementById('zoomnote').textContent =
+      `${M.line.slice(15, 32).trim()} UTC, observatory code ${M.site}: the observation neither prediction used. ` +
+      `Both predictions computed for that place and moment.`;
+    const near = Math.max(...tp(M[better]).map(Math.abs));
+    drawZoom(document.getElementById('zoom2'), near * 1.6, true);
+    document.getElementById('zoom2note').textContent =
+      `Close-up. Today's orbit (JPL#54), fitted with sightings up to September 2020 including this one, ` +
+      `puts the comet ${fmtAngle(miss.J)} from this measurement: the floor a prediction can hope for.`;
+
+    const F = S.fits, row = f => `<tr><td>${name(f)}</td><td>${F[f].mpec}, issued ${F[f].issued}</td>
+      <td>${F[f].days} days of sightings, ${F[f].observations} positions</td><td>missed by ${fmtAngle(miss[f])}</td></tr>`;
+    document.getElementById('who').innerHTML =
+      `<tr><th></th><th>Who and when</th><th>Data behind it</th><th>13 March 2020</th></tr>` + row(order[0]) + row(order[1]);
+    document.getElementById('why').innerHTML = `What separated them was data, not cleverness: the later fit had
+      twice the days of sightings. The two paths were already 1″ apart on 15 September 2019, four days after
+      the first prediction, which a good telescope can measure. Neither fit modelled the comet's outgassing,
+      and even the better one drifted by ${fmtAngle(miss.B)} by March.`;
+    document.getElementById('sources').innerHTML = `Sources: <a href="${F.A.url}">${F.A.mpec}</a> and
+      <a href="${F.B.url}">${F.B.mpec}</a> (Minor Planet Center; orbital elements transcribed, text not
+      reproduced); positions from JPL Horizons with each fit's elements; observations from the MPC observation
+      service. Full record: Researches, frontier-replay-2I-borisov. Raw data: <a href="data/borisov-replay.json">borisov-replay.json</a>.`;
+  }
+
+  // ---------- self-checks: each one can fail ----------
+  const out = [];
+  const M = D.march, want = S.misses_arcsec_by_horizons;
+  const ok1 = ['A', 'B', 'J'].every(f => Math.abs(sepArcsec(M[f], M.obs) - want[f]) < 0.5);
+  out.push(`misses recomputed from positions match the Horizons record (±0.5″): ${ok1 ? 'PASS' : 'FAIL'}`);
+  const ok2 = P.A.length === P.B.length && P.A.every((p, i) => p[0] === P.B[i][0]);
+  out.push(`both paths share the same ${P.A.length} dates: ${ok2 ? 'PASS' : 'FAIL'}`);
+  // Each shared sighting from 1 Sept on must lie on BOTH paths (they were fitted to it).
+  const mon = { Aug: 7, Sep: 8, Oct: 9 }, t0 = Date.UTC(2019, 8, 1);
+  let worst = 0, used = 0;
+  for (const s of D.shared) {
+    const [yy, mm, dd] = s[0].split(' ').map(Number), t = (Date.UTC(yy, mm - 1, 1) - t0) / 864e5 + dd - 1;
+    if (t < 0) continue; used++;
+    const i = Math.floor(t), f = t - i;
+    for (const k of ['A', 'B']) {
+      const p = P[k][i], q = P[k][i + 1];
+      worst = Math.max(worst, sepArcsec([p[1] + (q[1] - p[1]) * f, p[2] + (q[2] - p[2]) * f], [s[1], s[2]]));
+    }
+  }
+  const ok3 = used > 0 && worst < 20;
+  out.push(`${used} early sightings lie on both paths (worst ${worst.toFixed(1)}″, limit 20″): ${ok3 ? 'PASS' : 'FAIL'}`);
+  const all = ok1 && ok2 && ok3;
+  console.log('[boundary-sky borisov] ' + (all ? 'PASS' : 'FAIL') + ' — ' + out.join(' · '));
+  document.getElementById('selfcheck').textContent = 'self-check ' + (all ? 'PASS' : 'FAIL') + ': ' + out.join(' · ');
+}).catch(e => {
+  document.getElementById('selfcheck').textContent = 'Could not load data/borisov-replay.json: ' + e;
+  console.log('[boundary-sky borisov] FAIL — data did not load: ' + e);
+});
+</script>
+</body>
+</html>
