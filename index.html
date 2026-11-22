@@ -31,6 +31,13 @@
   #clock { position: fixed; bottom: 10px; left: 10px; right: 10px; color: #8fa1b8;
            font-size: 12px; background: rgba(10,14,22,0.7); padding: 4px 8px;
            border-radius: 6px; }
+  /* collapsible panel: on a phone the full HUD covers about half the screen */
+  #hud-toggle { min-width: 40px; min-height: 36px; margin-right: 6px; font-size: 18px; line-height: 1;
+                background: #16202e; color: #e8eef6; border: 1px solid #2a3a52; border-radius: 6px;
+                cursor: pointer; vertical-align: middle; }
+  #hud.collapsed { padding: 6px 8px; }
+  #hud.collapsed #hud-body, #hud.collapsed h1 .note { display: none; }
+  #hud.collapsed h1 { margin: 0; }
   /* first-minute invitation: one question, then the switch, then "what changed?" */
   #invite { position: fixed; left: 50%; transform: translateX(-50%); bottom: 46px;
             width: min(92vw, 380px); box-sizing: border-box;
@@ -47,7 +54,9 @@
 </head>
 <body>
 <div id="hud">
-  <h1>boundary-sky <span class="note">rung 8 — the ladder's second rung (δ Cephei)</span></h1>
+  <h1><button id="hud-toggle" aria-controls="hud-body" aria-expanded="true"
+       title="show or hide the controls">☰</button>boundary-sky <span class="note">rung 8 — the ladder's second rung (δ Cephei)</span></h1>
+  <div id="hud-body">
   <label>camera rides with<select id="focus-select"></select>
     <button id="reset-view" style="margin-left:6px;background:#16202e;color:#e8eef6;
       border:1px solid #2a3a52;border-radius:4px;padding:2px 8px;cursor:pointer">reset view</button>
@@ -80,6 +89,7 @@
       Corrections are appended to <code>provenance-log.jsonl</code>, never erased.
     </div>
   </details>
+  </div>
 </div>
 <div id="clock"></div>
 <div id="invite" hidden>
@@ -494,6 +504,25 @@ document.getElementById('reset-view').addEventListener('click', () => {
   firstFrame = true; // same re-seat, current focus — back to default framing
 });
 
+// ---- collapsible panel ------------------------------------------------------
+// On a phone the full panel covers about half the screen, so it starts folded on
+// narrow screens (<= 600 px) and open on wide ones; the visitor's own choice wins
+// and is remembered (storage optional, so blocked storage just means the default).
+{
+  const KEY = 'boundary-sky.hud.collapsed';
+  const hud = document.getElementById('hud');
+  const btn = document.getElementById('hud-toggle');
+  let stored = null;
+  try { stored = localStorage.getItem(KEY); } catch (e) { /* storage blocked: use the default */ }
+  const set = (collapsed, remember) => {
+    hud.classList.toggle('collapsed', collapsed);
+    btn.setAttribute('aria-expanded', String(!collapsed));
+    if (remember) try { localStorage.setItem(KEY, collapsed ? '1' : '0'); } catch (e) { /* not remembered */ }
+  };
+  set(stored === null ? innerWidth <= 600 : stored === '1', false);
+  btn.addEventListener('click', () => set(!hud.classList.contains('collapsed'), true));
+}
+
 // ---- first-minute invitation (Astra's review, 2026-11-22) ----------------
 // One question before any explanation: guess the Moon's distance, then flip
 // radii ×20 yourself and notice that the bodies grow while the Earth–Moon
@@ -531,7 +560,7 @@ let timePaused = false;
     } else if (step === 1) {
       text.innerHTML = 'Only the sizes changed. The distance is <b>measured</b>; the ×20 is a ' +
         '<b>labeled lie</b> that makes tiny worlds visible. Every body tells you which of its ' +
-        'numbers are measured and what the renderer changed: open <i>provenance</i> above.';
+        'numbers are measured and what the renderer changed: tap ☰, then <i>provenance</i>.';
       next.textContent = 'Got it';
       skip.hidden = true;
       step = 2;
