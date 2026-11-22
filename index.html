@@ -559,7 +559,16 @@ let timePaused = false;
   // (operator, 2026-11-22: "I couldn't find it"). The panel button restarts it from
   // the first question, with x20 switched back off so that question still works.
   const first = { text: text.innerHTML, next: next.textContent };
+  // The open panel can leave the card only a sliver (S10 in Brave: ~590 px of page, the
+  // card got 80 px with its buttons scrolled away, 2026-11-22). The card's question is
+  // about the clock line at the bottom, so fold the panel while it is shown (not saved).
+  const foldForCard = () => {
+    if (hudBox.classList.contains('collapsed')) return;
+    hudBox.classList.add('collapsed');
+    document.getElementById('hud-toggle').setAttribute('aria-expanded', 'false');
+  };
   const restart = () => {
+    foldForCard();
     const t = document.getElementById('scale-toggle');
     if (t.checked) { t.checked = false; t.dispatchEvent(new Event('change')); }
     text.innerHTML = first.text; next.textContent = first.next; skip.hidden = false;
@@ -612,7 +621,7 @@ let timePaused = false;
   new MutationObserver(place).observe(hudBox, { attributes: true, attributeFilter: ['class'] });
   if (window.ResizeObserver) new ResizeObserver(place).observe(clockLine);
   addEventListener('resize', place);
-  if (!seen || forced) { card.hidden = false; timePaused = true; place(); }
+  if (!seen || forced) { foldForCard(); card.hidden = false; timePaused = true; place(); }
   document.getElementById('tour-again').addEventListener('click', restart);
 }
 
